@@ -145,7 +145,7 @@ namespace SqliteDbContextLib
                 var pkValue = pk.Property.GetValue(entity);
                 attempts = 0;
                 //randomly reference PKs or if PKs are also FKs
-                fetchExistingKey = KeySeeder.Random.Next(0, 2) == 1 || entityFKs.Any(x => entityPKs.Any(y => y.Property.Name == x.Property.Name));
+                fetchExistingKey = false;// KeySeeder.Random.Next(0, 2) == 1 || entityFKs.Any(x => entityPKs.Any(y => y.Property.Name == x.Property.Name));
                 //may have to introduce some expression or pull metadata to resolve constraints
                 bool success = false;
                 var keyName = GetKeyName(pk.Property);
@@ -153,14 +153,15 @@ namespace SqliteDbContextLib
                 {
                     try
                     {
-                        if (fetchExistingKey && KeySeeder.TryGetRandomKeyFromName(keyName, out object? keyValue))
+                        var keyValue = new object();
+                        if (fetchExistingKey && false)//KeySeeder.TryGetRandomKeyFromName(keyName, out object? keyValue))
                         {
                             pk.Property.SetValue(entity, keyValue);
                             success = true;
                         }
                         else
                         {
-                            pk.Property.SetValue(entity, Convert.ChangeType(KeySeeder.IncrementOrInitializeFromName<E>(keyName, pk.Property.PropertyType), pk.Property.PropertyType));
+                            pk.Property.SetValue(entity, 1);//)Convert.ChangeType(KeySeeder.IncrementOrInitializeFromName<E>(keyName, pk.Property.PropertyType), pk.Property.PropertyType));
                             success = true;
                         }
                         break;
@@ -171,7 +172,7 @@ namespace SqliteDbContextLib
                     }
                 } while (attempts++ < 5);
                 if (!success)
-                    pk.Property.SetValue(entity, Convert.ChangeType(KeySeeder.IncrementOrInitializeFromName<E>(keyName, pk.Property.PropertyType), pk.Property.PropertyType));
+                    pk.Property.SetValue(entity, 1);// Convert.ChangeType(KeySeeder.IncrementOrInitializeFromName<E>(keyName, pk.Property.PropertyType), pk.Property.PropertyType));
             }
             dbcontext.Add(entity);
             dbcontext.SaveChanges();

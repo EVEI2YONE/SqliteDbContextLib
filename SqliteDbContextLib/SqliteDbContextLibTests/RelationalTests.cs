@@ -62,6 +62,13 @@ namespace SqliteDbContextLibTests
             ctx = context.Context;
         }
 
+        [Test]
+        public void DisplayDependencies()
+        {
+            var dependencyResolver = new DependencyResolver(ctx);
+            Console.WriteLine(String.Join("\n", dependencyResolver.GetDependencyOrder().Select(x => x.Name)));
+        }
+
         [TestCase(1)]
         [TestCase(2)]
         [TestCase(5)]

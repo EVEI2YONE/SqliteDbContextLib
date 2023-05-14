@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace SqliteDbContextLib
 {
-    internal class DependencyResolver
+    public class DependencyResolver
     {
         private IEnumerable<Type> EntityTypes;
         private Type[,] Matrix;

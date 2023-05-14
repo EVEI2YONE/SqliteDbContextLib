@@ -16,4 +16,9 @@
     <PackageReference Include="coverlet.collector" Version="3.1.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\DbFirstTestProject\DbFirstTestProject.DataLayer\DbFirstTestProject.DataLayer.csproj" />
+    <ProjectReference Include="..\SqliteDbContextLib\SqliteDbContextLib.csproj" />
+  </ItemGroup>
+
 </Project>

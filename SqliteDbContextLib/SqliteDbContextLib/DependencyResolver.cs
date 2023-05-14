@@ -13,14 +13,16 @@ namespace SqliteDbContextLib
     {
         private IEnumerable<Type> EntityTypes;
         private Type[,] Matrix;
-        private IDictionary<Type, int> Dict;
+        private IDictionary<Type, int>? Dict;
         private List<PropertyMetadata> Properties;
         private List<PropertyMetadata> PkProperties;
         private List<Type> DependencyOrder;
         private List<Type> KeyfulEntities;
         private List<Type> KeylessEntities;
-        public DependencyResolver(DbContext context)
+        public DependencyResolver(DbContext? context)
         {
+            if (context == null)
+                throw new ArgumentException("Must have dbContext instance supplied", nameof(context), null);
             EntityTypes = context.Model.GetEntityTypes().Select(x => x.ClrType);
             Properties = new List<PropertyMetadata>();
             PkProperties = new List<PropertyMetadata>();

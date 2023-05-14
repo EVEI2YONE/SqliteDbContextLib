@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoPopulate", "..\..\skenn
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqliteDbContextLibTests", "SqliteDbContextLibTests\SqliteDbContextLibTests.csproj", "{C49847CD-7C2A-4CEB-9A84-DC5A21AD1173}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DbFirstTestProject.DataLayer", "..\..\DbFirstTestProject\DbFirstTestProject.DataLayer\DbFirstTestProject.DataLayer.csproj", "{06C222BC-45FD-4243-A47A-716C626407ED}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{C49847CD-7C2A-4CEB-9A84-DC5A21AD1173}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C49847CD-7C2A-4CEB-9A84-DC5A21AD1173}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C49847CD-7C2A-4CEB-9A84-DC5A21AD1173}.Release|Any CPU.Build.0 = Release|Any CPU
+		{06C222BC-45FD-4243-A47A-716C626407ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{06C222BC-45FD-4243-A47A-716C626407ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{06C222BC-45FD-4243-A47A-716C626407ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{06C222BC-45FD-4243-A47A-716C626407ED}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

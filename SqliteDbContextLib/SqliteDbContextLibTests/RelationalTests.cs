@@ -1,6 +1,7 @@
 ﻿using DbFirstTestProject.DataLayer.Context;
 using DbFirstTestProject.DataLayer.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
 using SqliteDbContextLib;
 using System;
 using System.Collections.Generic;
@@ -112,6 +113,39 @@ namespace SqliteDbContextLibTests
             Assert.AreEqual(total * 2, context.Context.Table3.Count());
             Assert.AreEqual(total * 2 * 2, context.Context.Table2.Count());
             Assert.AreEqual(total * 2 * 2 * 2, context.Context.Table1.Count());
+        }
+
+        [Test]
+        public void Table1_UpdateTest()
+        {
+            int total = 50;
+            Table1Test(total);
+            Assert.AreEqual(total, ctx.Table1.Count());
+
+            var item = context.GenerateEntity<Table1>(table => { table.Col1_PK = 1; table.Col2 = "Random"; table.Col3 = int.MinValue; });
+            Assert.AreEqual(total, ctx.Table1.Count());
+            Assert.AreEqual(1, item.Col1_PK);
+            Assert.AreEqual("Random", item.Col2);
+            Assert.AreEqual(int.MinValue, item.Col3);
+        }
+
+        [Test]
+        public void Table4_InitializeTest() 
+        {
+            int total = 5;
+            Table4Test(total);
+
+            var count = ctx.Table4.Count();
+
+            var item = context.GenerateEntity<Table4>(table => { table.Col5_Value = "Random"; table.Col6_Extra = int.MinValue; });
+            Assert.IsNotNull(item);
+            Assert.AreEqual("Random", item.Col5_Value);
+            Assert.AreEqual(int.MinValue, item.Col6_Extra);
+            Assert.AreEqual(count+1, ctx.Table4.Count());
+
+            var search = ctx.Table4.Find(item.Col1_T1PKFK, item.Col2_T2PKFK, item.Col3_T3PKFK_PKFK, item.Col4_T3PKFK_FK);
+            Assert.IsNotNull(search);
+            Assert.AreEqual(item, search);
         }
     }
 }

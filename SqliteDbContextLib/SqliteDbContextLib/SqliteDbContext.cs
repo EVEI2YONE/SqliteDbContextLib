@@ -40,12 +40,12 @@ namespace SqliteDbContextLib
             var list = new List<E>();
             for(int i = 0; i < count; i++)
             {
-                list.Add(Generate(initializeAction));
+                list.Add(GenerateEntity(initializeAction));
             }
             return list;
         }
 
-        public E Generate<E>(Action<E>? initializeAction = null) where E : class
+        public E GenerateEntity<E>(Action<E>? initializeAction = null) where E : class
         {
             var type = typeof(E);
             if (!postDependencyResolvers.ContainsKey(type))
@@ -53,9 +53,17 @@ namespace SqliteDbContextLib
             var entity = bogus.Generate<E>();
             bogus.RemoveGeneratedReferences(entity);
             bogus.ClearKeys(entity);
-            bogus.ApplyDependencyAction(entity, (Action<E, IKeySeeder>) postDependencyResolvers[type]);
             bogus.ApplyInitializingAction(entity, initializeAction);
-            context?.Add(entity);
+            var search = context?.Set<E>()?.Find(entity.GetKeys());
+            if (search == null)
+            {
+                bogus.ApplyDependencyAction(entity, (Action<E, IKeySeeder>)postDependencyResolvers[type]);
+                context?.Add(entity);
+            }
+            else
+            {
+                bogus.ApplyInitializingAction(search, initializeAction);
+            }
             context?.SaveChanges();
             return entity;
         }

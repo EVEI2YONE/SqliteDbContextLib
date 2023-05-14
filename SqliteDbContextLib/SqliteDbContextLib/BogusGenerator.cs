@@ -15,18 +15,14 @@ namespace SqliteDbContextLib
     public class BogusGenerator
     {
         private DbContext dbcontext;
-        private IEnumerable<PropertyMetadata> foreignKeyPropertyMetadata;
-        private IEnumerable<PropertyMetadata> primaryKeyPropertyMetadata;
         private AutoPopulate autopopulate = new AutoPopulate();
         private IKeySeeder keySeeder = new KeySeeder();
-        public BogusGenerator(DbContext? context, IEnumerable<PropertyMetadata> primaryKeyProperties, IEnumerable<PropertyMetadata> foreignKeyProperties)
+        public BogusGenerator(DbContext? context)
         {
             if (context == null)
                 throw new ArgumentException("Must have value supplied", nameof(context), null);
             AutoPopulate.DefaultValues = typeSwitch;
             dbcontext = context;
-            primaryKeyPropertyMetadata = primaryKeyProperties;
-            foreignKeyPropertyMetadata = foreignKeyProperties;
             keySeeder.ClearAllKeys();
         }
 

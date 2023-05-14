@@ -5,24 +5,15 @@ namespace SqliteDbContextLib
 {
     public class SqliteDbContext<T> where T : DbContext
     {
-        private DependencyResolver resolver;
         private BogusGenerator bogus;
-        private IEnumerable<PropertyMetadata> pkProperties;
-        private IEnumerable<PropertyMetadata> fkProperties;
-        private IEnumerable<Type> keylessEntities;
         private T? context;
         private static IDictionary<Type, Delegate> postDependencyResolvers = new Dictionary<Type, Delegate>();
         public T? Context { get { return context; } }
-        public IEnumerable<string> DependencyOrder { get { return resolver?.GetDependencyOrder().Select(x => x.Name) ?? throw new Exception("No types have been registered. Ensure getters are set in context"); } }
 
         public SqliteDbContext(string? DbInstanceName = null)
         {
             CreateConnection(DbInstanceName);
-            resolver = new DependencyResolver(context);
-            fkProperties = resolver.GetForeignKeyPropertyMetadata();
-            pkProperties = resolver.GetPrimaryKeyPropertyMetadata();
-            keylessEntities = resolver.GetKeylessEntities();
-            bogus = new BogusGenerator(context, pkProperties, fkProperties);
+            bogus = new BogusGenerator(context);
         }
 
         private void CreateConnection(string? dbIntanceName)

@@ -57,9 +57,21 @@ namespace SqliteDbContextLib
             var search = context?.Set<E>()?.Find(entity.GetKeys());
             if (search == null)
             {
-                bogus.ApplyDependencyAction(entity, (Action<E, IKeySeeder>)postDependencyResolvers[type]);
+                if (entity.GetKeys().Any(x => x.ToString() == "-1" || x.ToString() == null))
+                {
+                    do //if not null, then it was generated ahead of time - skip and generate next valid entity
+                    {
+                        bogus.ApplyDependencyAction(entity, (Action<E, IKeySeeder>)postDependencyResolvers[type]);
+                        search = context?.Set<E>()?.Find(entity.GetKeys());
+                    } while (search != null);
+                }
+                else //all keys must be initialized in order to override autogeneration - assumes user will handle dependencies outside of what is provided
+                {
+                    bogus.ApplyInitializingAction(entity, initializeAction);
+                }
+                search = context?.Set<E>()?.Find(entity.GetKeys());
                 context?.Add(entity);
-            }
+            } //all keys match and found existing item
             else
             {
                 bogus.ApplyInitializingAction(search, initializeAction);

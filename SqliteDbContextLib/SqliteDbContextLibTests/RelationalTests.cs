@@ -123,20 +123,6 @@ namespace SqliteDbContextLibTests
         }
 
         [Test]
-        public void Table1_UpdateTest()
-        {
-            int total = 50;
-            Table1Test(total);
-            Assert.AreEqual(total, ctx.Table1.Count());
-
-            var item = context.GenerateEntity<Table1>(table => { table.Col1_PK = 1; table.Col2 = "Random"; table.Col3 = int.MinValue; });
-            Assert.AreEqual(total, ctx.Table1.Count());
-            Assert.AreEqual(1, item.Col1_PK);
-            Assert.AreEqual("Random", item.Col2);
-            Assert.AreEqual(int.MinValue, item.Col3);
-        }
-
-        [Test]
         public void Table4_InitializeTest() 
         {
             int total = 5;
@@ -153,6 +139,77 @@ namespace SqliteDbContextLibTests
             var search = ctx.Table4.Find(item.Col1_T1PKFK, item.Col2_T2PKFK, item.Col3_T3PKFK_PKFK, item.Col4_T3PKFK_FK);
             Assert.IsNotNull(search);
             Assert.AreEqual(item, search);
+        }
+
+        [Test]
+        public void Table1_UpdateTest()
+        {
+            int total = 50;
+            Table1Test(total);
+            Assert.AreEqual(total, ctx.Table1.Count());
+
+            var item = context.GenerateEntity<Table1>(table => { table.Col1_PK = 1; table.Col2 = "Random"; table.Col3 = int.MinValue; });
+            Assert.AreEqual(total, ctx.Table1.Count());
+            Assert.AreEqual(1, item.Col1_PK);
+            Assert.AreEqual("Random", item.Col2);
+            Assert.AreEqual(int.MinValue, item.Col3);
+        }
+
+        [Test]
+        public void Table1_CustomGenerateTest()
+        {
+            int total = 50;
+            Table1Test(total);
+            Assert.AreEqual(total, ctx.Table1.Count());
+
+            var item = context.GenerateEntity<Table1>(table => { table.Col1_PK = 51; table.Col2 = "Random"; table.Col3 = int.MinValue; });
+            Assert.AreEqual(total + 1, ctx.Table1.Count());
+            Assert.AreEqual(total + 1, item.Col1_PK);
+            Assert.AreEqual("Random", item.Col2);
+            Assert.AreEqual(int.MinValue, item.Col3);
+        }
+
+        [Test]
+        public void Table1_CustomGenerate_AutoGenerateTest()
+        {
+            int total = 50;
+            Table1_CustomGenerateTest();
+            Assert.AreEqual(total + 1, ctx.Table1.Count());
+
+            var item = context.GenerateEntity<Table1>();
+
+            Assert.AreEqual(total + 2, ctx.Table1.Count());
+            Assert.AreEqual(total + 2, item.Col1_PK);
+        }
+
+        [Test]
+        public void Table1_HighPK_AutoGenerateTest()
+        {
+            int total = 50;
+            //Table1Test(total);
+            Table2Test(total/2); //for table 2 test
+            Assert.AreEqual(total, ctx.Table1.Count());
+            var id = 23859;
+
+            var item = context.GenerateEntity<Table1>(table => table.Col1_PK = id);
+
+            Assert.AreEqual(total + 1, ctx.Table1.Count());
+            Assert.AreEqual(id, item.Col1_PK);
+
+            item = context.GenerateEntity<Table1>();
+            Assert.AreEqual(total + 2, ctx.Table1.Count());
+            Assert.AreEqual(total + 1, item.Col1_PK);
+        }
+
+        [Test]
+        public void Table2_HighPK_AutoGenerateTest()
+        {
+            int total = 50;
+            int table2Total = total / 2;
+            int table1Total = total + 2;
+            Table1_HighPK_AutoGenerateTest();
+            Assert.AreEqual(table1Total, ctx.Table1.Count());
+            Assert.AreEqual(table2Total, ctx.Table2.Count());
         }
     }
 }

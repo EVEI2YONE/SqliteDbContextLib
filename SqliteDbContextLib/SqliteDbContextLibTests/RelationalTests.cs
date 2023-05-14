@@ -22,18 +22,18 @@ namespace SqliteDbContextLibTests
         [OneTimeSetUp]
         public void OneTimeSetUp()
         {
-            SqliteDbContext<EntityProjectContext>.RegisterPostDependencyResolver<Table1>((table, seeder) =>
+            SqliteDbContext<EntityProjectContext>.RegisterKeyAssignment<Table1>((table, seeder) =>
             {
                 table.Col1_PK = seeder.IncrementKeys<Table1>().First();
             });
 
-            SqliteDbContext<EntityProjectContext>.RegisterPostDependencyResolver<Table2>((table, seeder) =>
+            SqliteDbContext<EntityProjectContext>.RegisterKeyAssignment<Table2>((table, seeder) =>
             {
                 table.Col1_PK = (int)seeder.IncrementKeys<Table2>().First();
                 table.Col2_FK = seeder.GetRandomKeys<Table1>().First();
             });
 
-            SqliteDbContext<EntityProjectContext>.RegisterPostDependencyResolver<Table3>((table, seeder) =>
+            SqliteDbContext<EntityProjectContext>.RegisterKeyAssignment<Table3>((table, seeder) =>
             {
                 var query = ctx.Table2.Select(x => new object[] { x.Table1.Col1_PK, x.Col1_PK });
                 var keys = seeder.GetUniqueRandomKeys<Table3>(ctx, query);
@@ -41,7 +41,7 @@ namespace SqliteDbContextLibTests
                 table.Col2_FK = (int) keys.Last();
             });
 
-            SqliteDbContext<EntityProjectContext>.RegisterPostDependencyResolver<Table4>((table, seeder) =>
+            SqliteDbContext<EntityProjectContext>.RegisterKeyAssignment<Table4>((table, seeder) =>
             {
                 var query = ctx.Table3.Select(x => new object[] { x.Table1.Col1_PK, x.Table2.Col1_PK, x.Col1_PKFK, x.Col2_FK });
 

@@ -33,7 +33,7 @@ namespace SqliteDbContextLib
             context?.Database.EnsureCreated();
         }
 
-        public static void RegisterPostDependencyResolver<E>(Action<E, IKeySeeder> dependencyActionResolver) where E : class
+        public static void RegisterKeyAssignment<E>(Action<E, IKeySeeder> dependencyActionResolver) where E : class
             => postDependencyResolvers.TryAdd(typeof(E), (Delegate)dependencyActionResolver);
 
         public List<E> GenerateEntities<E>(int count, Action<E>? initializeAction = null) where E : class

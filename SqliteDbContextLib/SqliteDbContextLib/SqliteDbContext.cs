@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using System.Runtime.CompilerServices;
 
 namespace SqliteDbContextLib
 {
@@ -57,9 +58,13 @@ namespace SqliteDbContextLib
             var search = context?.Set<E>()?.Find(entity.GetKeys());
             if (search == null)
             {
+                //assumes all keys are untouched
                 if (entity.GetKeys().Any(x => x.ToString() == "-1" || x.ToString() == null))
                 {
-                    do //if not null, then it was generated ahead of time - skip and generate next valid entity
+                    //validation that all keys are untouched or are warns user that keys are incorrectly assigned
+                    if (!entity.GetKeys().All(x => x.ToString() == "-1" || x.ToString() == null))
+                        throw new Exception($"Didn't update all keys required to override autogeneration");
+                    do //if entity is found, then it was generated ahead of time - skip and generate next valid entity
                     {
                         bogus.ApplyDependencyAction(entity, (Action<E, IKeySeeder>)postDependencyResolvers[type]);
                         search = context?.Set<E>()?.Find(entity.GetKeys());

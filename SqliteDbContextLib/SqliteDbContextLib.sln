@@ -5,9 +5,7 @@ VisualStudioVersion = 17.5.33414.496
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SqliteDbContextLib", "SqliteDbContextLib\SqliteDbContextLib.csproj", "{3A31C944-B8EC-4CBA-997F-810551D89BC9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoPopulate", "..\..\skenneth\AutoPopulate\AutoPopulate\AutoPopulate.csproj", "{12766C90-7462-411A-AFB3-48DBC5A323FA}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqliteDbContextLibTests", "SqliteDbContextLibTests\SqliteDbContextLibTests.csproj", "{C49847CD-7C2A-4CEB-9A84-DC5A21AD1173}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SqliteDbContextLibTests", "SqliteDbContextLibTests\SqliteDbContextLibTests.csproj", "{C49847CD-7C2A-4CEB-9A84-DC5A21AD1173}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DbFirstTestProject.DataLayer", "..\..\DbFirstTestProject\DbFirstTestProject.DataLayer\DbFirstTestProject.DataLayer.csproj", "{06C222BC-45FD-4243-A47A-716C626407ED}"
 EndProject
@@ -21,10 +19,6 @@ Global
 		{3A31C944-B8EC-4CBA-997F-810551D89BC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3A31C944-B8EC-4CBA-997F-810551D89BC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3A31C944-B8EC-4CBA-997F-810551D89BC9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{12766C90-7462-411A-AFB3-48DBC5A323FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{12766C90-7462-411A-AFB3-48DBC5A323FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{12766C90-7462-411A-AFB3-48DBC5A323FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{12766C90-7462-411A-AFB3-48DBC5A323FA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C49847CD-7C2A-4CEB-9A84-DC5A21AD1173}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C49847CD-7C2A-4CEB-9A84-DC5A21AD1173}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C49847CD-7C2A-4CEB-9A84-DC5A21AD1173}.Release|Any CPU.ActiveCfg = Release|Any CPU

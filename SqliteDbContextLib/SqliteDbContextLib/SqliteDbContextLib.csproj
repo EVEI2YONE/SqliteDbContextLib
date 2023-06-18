@@ -15,10 +15,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="7.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.5" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\skenneth\AutoPopulate\AutoPopulate\AutoPopulate.csproj" />
+    <PackageReference Include="SmoothBrain.AutoPopulate" Version="1.0.0" />
   </ItemGroup>
 
 </Project>

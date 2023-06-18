@@ -156,13 +156,13 @@ namespace SqliteDbContextLib
             return randomKeys;
         }
 
+        private ICollection<string> uniqueKeysSelected = new HashSet<string>();
         public object[] GetUniqueRandomKeys<T>(DbContext context, IQueryable<object[]> QueryUniqueKeys) where T : class
         {
             int attempts = 0;
-            var properties = typeof(T).GetProperties().Where(x => x.GetCustomAttribute<KeyAttribute>() != null);
             object[] keySet;
             int index = -1;
-            var uniqueKeys = QueryUniqueKeys.ToList();
+            var uniqueKeys = QueryUniqueKeys.AsEnumerable().Where(x => !uniqueKeysSelected.Contains(UniqueKey<T>(x))).ToList();
             do
             {
                 if (!uniqueKeys.Any())
@@ -174,7 +174,11 @@ namespace SqliteDbContextLib
                 index = random.Next(0, uniqueKeys.Count);
                 keySet = uniqueKeys.ElementAt(index);
             } while (context.Set<T>().Find(keySet) != null);
+            uniqueKeysSelected.Add(UniqueKey<T>(keySet));
             return keySet;
         }
+
+        private string UniqueKey<T>(object[] ids)
+            => $"{typeof(T).Name}:{string.Join(":", ids)}";
     }
 }

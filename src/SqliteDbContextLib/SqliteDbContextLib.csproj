@@ -12,11 +12,12 @@ Referential integrity is not maintained in this library.
 Users must construct objects in a relation manner to preserve referential integrity.
 The purpose of this library is to populate entities with random values and appropriate PK and FK keys 
 via queries and setup during the entity creation.</Description>
-    <PackageProjectUrl>https://github.com/EVEI2YONE/SqliteDbContextLib.git</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/EVEI2YONE/SqliteDbContextLib.git</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/SmoothBrainDevelopers/SqliteDbContextLib.git</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/SmoothBrainDevelopers/SqliteDbContextLib.git</RepositoryUrl>
     <PackageTags>Test;Sqlite;DbContext</PackageTags>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,6 +26,10 @@ via queries and setup during the entity creation.</Description>
 
   <ItemGroup>
     <None Include="..\..\LICENSE.txt">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\..\README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>

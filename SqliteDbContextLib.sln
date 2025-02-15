@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33414.496
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqliteDbContextLib", "src\SqliteDbContextLib\SqliteDbContextLib.csproj", "{24EC187C-843E-6EE0-15D2-503D340B0463}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqliteDbContext", "src\SqliteDbContextLib\SqliteDbContext.csproj", "{24EC187C-843E-6EE0-15D2-503D340B0463}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqliteDbContextLib.Tests", "src\SqliteDbContextLib.Tests\SqliteDbContextLib.Tests.csproj", "{9BF6781C-E04F-89DB-18DB-9B62E36A0896}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{24EC187C-843E-6EE0-15D2-503D340B0463}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{24EC187C-843E-6EE0-15D2-503D340B0463}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{24EC187C-843E-6EE0-15D2-503D340B0463}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9BF6781C-E04F-89DB-18DB-9B62E36A0896}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9BF6781C-E04F-89DB-18DB-9B62E36A0896}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9BF6781C-E04F-89DB-18DB-9B62E36A0896}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9BF6781C-E04F-89DB-18DB-9B62E36A0896}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

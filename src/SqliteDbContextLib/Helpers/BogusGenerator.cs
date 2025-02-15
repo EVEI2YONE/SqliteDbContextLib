@@ -1,4 +1,4 @@
-﻿using AutoPopulate_Generator;
+﻿using AutoPopulate;
 using Bogus;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -10,12 +10,12 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SqliteDbContextLib
+namespace SqliteDbContext.Helpers
 {
     public class BogusGenerator
     {
         private DbContext dbcontext;
-        private AutoPopulate autopopulate = new AutoPopulate();
+        private EntityGenerator autopopulate = new EntityGenerator();
         private IKeySeeder keySeeder = new KeySeeder();
         public BogusGenerator(DbContext? context)
         {
@@ -30,7 +30,7 @@ namespace SqliteDbContextLib
         public static Dictionary<Type, Delegate> typeSwitch = new Dictionary<Type, Delegate> {
             { typeof(string), () => f.Random.Words(5) },
             { typeof(bool), () => f.Random.Bool() },
-            { typeof(Int16), () => f.Random.Short(1) },
+            { typeof(short), () => f.Random.Short(1) },
             { typeof(int), () => f.Random.Int(1) },
             { typeof(long), () => f.Random.Long(1) },
             { typeof(decimal), () => f.Random.Decimal(1) },
@@ -63,7 +63,7 @@ namespace SqliteDbContextLib
             foreach(var property in item.GetType().GetProperties())
             {
                 var propertyType = property.PropertyType;
-                var type = (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(Nullable<>)) ? propertyType.UnderlyingSystemType : propertyType;
+                var type = propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(Nullable<>) ? propertyType.UnderlyingSystemType : propertyType;
                 if (type.IsPrimitive || type == typeof(string) || type == typeof(DateTime))
                     continue;
                 if (type.IsGenericType)
@@ -90,7 +90,7 @@ namespace SqliteDbContextLib
                 {
                     if (x.PropertyType == typeof(string))
                     {
-                        x.SetValue(item, (string?)null);
+                        x.SetValue(item, null);
                     }
                     else
                     {

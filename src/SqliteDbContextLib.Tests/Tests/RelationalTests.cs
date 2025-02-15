@@ -1,4 +1,9 @@
-﻿namespace SqliteDbContextLibTests
+﻿using SqliteDbContext.Context;
+using SqliteDbContext.Helpers;
+using SqliteDbContextLibTests.Context;
+using SqliteDbContextLibTests.Entities;
+
+namespace SqliteDbContextLibTests.Tests
 {
     internal class RelationalTests
     {
@@ -52,7 +57,7 @@
         public void DisplayDependencies()
         {
             var dependencyResolver = new DependencyResolver(ctx);
-            Console.WriteLine(String.Join("\n", dependencyResolver.GetDependencyOrder().Select(x => x.Name)));
+            Console.WriteLine(string.Join("\n", dependencyResolver.GetDependencyOrder().Select(x => x.Name)));
         }
 
         [TestCase(1)]

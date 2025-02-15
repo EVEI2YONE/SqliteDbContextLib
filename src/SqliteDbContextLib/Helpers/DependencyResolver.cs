@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SqliteDbContextLib
+namespace SqliteDbContext.Helpers
 {
     public class DependencyResolver
     {
@@ -166,7 +166,7 @@ namespace SqliteDbContextLib
             {
                 for (int j = 0; j < Matrix.GetLength(1); j++)
                 {
-                    string append = (j < Matrix.GetLength(1) - 1) ? "\t" : string.Empty;
+                    string append = j < Matrix.GetLength(1) - 1 ? "\t" : string.Empty;
                     string name = Matrix[i, j]?.Name ?? "_____";
                     response.Append($"{name}{append}");
                 }

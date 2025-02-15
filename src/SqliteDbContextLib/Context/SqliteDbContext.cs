@@ -1,8 +1,9 @@
 ﻿using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using SqliteDbContext.Helpers;
 using System.Runtime.CompilerServices;
 
-namespace SqliteDbContextLib
+namespace SqliteDbContext.Context
 {
     public class SqliteDbContext<T> where T : DbContext
     {
@@ -34,7 +35,7 @@ namespace SqliteDbContextLib
         }
 
         public static void RegisterKeyAssignment<E>(Action<E, IKeySeeder> dependencyActionResolver) where E : class
-            => postDependencyResolvers.TryAdd(typeof(E), (Delegate)dependencyActionResolver);
+            => postDependencyResolvers.TryAdd(typeof(E), dependencyActionResolver);
 
         public List<E> GenerateEntities<E>(int count, Action<E>? initializeAction = null) where E : class
         {

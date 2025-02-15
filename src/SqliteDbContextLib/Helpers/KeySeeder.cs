@@ -11,7 +11,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SqliteDbContextLib
+namespace SqliteDbContext.Helpers
 {
     public interface IKeySeeder
     {
@@ -51,7 +51,7 @@ namespace SqliteDbContextLib
 
             var keyPropertyNames = GetKeyPropertyNames<T>();
             if (!keyPropertyNames.Any())
-                throw new Exception($"{type.Name} must have at least one {nameof(System.ComponentModel.DataAnnotations.KeyAttribute)} Attribute");
+                throw new Exception($"{type.Name} must have at least one {nameof(KeyAttribute)} Attribute");
 
             InitialKeys.TryAdd(type, new Dictionary<string, long>());
             CurrentKeys.TryAdd(type, new  Dictionary<string, long>());
@@ -116,7 +116,7 @@ namespace SqliteDbContextLib
 
             var keyPropertyNames = GetKeyPropertyNames<T>();
             if (!keyPropertyNames.Any())
-                throw new Exception($"{type.Name} must have at least one {nameof(System.ComponentModel.DataAnnotations.KeyAttribute)} Attribute");
+                throw new Exception($"{type.Name} must have at least one {nameof(KeyAttribute)} Attribute");
 
             if (!InitialKeys.ContainsKey(type))
                 InitializeKeys<T>(keyPropertyNames.Select(x => (long)0).ToArray());

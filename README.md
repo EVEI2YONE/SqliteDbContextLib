@@ -28,3 +28,6 @@ This project also references <a href="https://github.com/skenneth/AutoPopulate.g
     </li>
   </ol>
 </p>
+<p>
+Refer to the sample test cases provided for more context
+</p>

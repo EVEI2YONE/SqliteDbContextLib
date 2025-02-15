@@ -1,18 +1,4 @@
-﻿using DbFirstTestProject.DataLayer.Context;
-using DbFirstTestProject.DataLayer.Entities;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
-using SqliteDbContextLib;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SqliteDbContextLibTests
+﻿namespace SqliteDbContextLibTests
 {
     internal class RelationalTests
     {

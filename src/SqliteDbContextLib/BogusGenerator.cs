@@ -21,7 +21,7 @@ namespace SqliteDbContextLib
         {
             if (context == null)
                 throw new ArgumentException("Must have value supplied", nameof(context), null);
-            AutoPopulate.DefaultValues = typeSwitch;
+            autopopulate.DefaultValues = typeSwitch;
             dbcontext = context;
             keySeeder.ClearAllKeys();
         }

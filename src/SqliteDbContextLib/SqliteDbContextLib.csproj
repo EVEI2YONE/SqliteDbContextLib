@@ -15,10 +15,19 @@ via queries and setup during the entity creation.</Description>
     <PackageProjectUrl>https://github.com/EVEI2YONE/SqliteDbContextLib.git</PackageProjectUrl>
     <RepositoryUrl>https://github.com/EVEI2YONE/SqliteDbContextLib.git</RepositoryUrl>
     <PackageTags>Test;Sqlite;DbContext</PackageTags>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Remove="DbContextHelper.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE.txt">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

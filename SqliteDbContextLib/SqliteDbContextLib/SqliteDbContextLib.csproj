@@ -4,6 +4,17 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Title>SqliteDbContext</Title>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Description>This is an DbContext leverage in-memory operations to simulate a DbContext for testing purposes. 
+DbContext errors on referential integrity issues when performing CRUD operations.
+Referential integrity is not maintained in this library.
+Users must construct objects in a relation manner to preserve referential integrity.
+The purpose of this library is to populate entities with random values and appropriate PK and FK keys 
+via queries and setup during the entity creation.</Description>
+    <PackageProjectUrl>https://github.com/EVEI2YONE/SqliteDbContextLib.git</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/EVEI2YONE/SqliteDbContextLib.git</RepositoryUrl>
+    <PackageTags>Test;Sqlite;DbContext</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>

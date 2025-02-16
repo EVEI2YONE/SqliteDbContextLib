@@ -18,7 +18,8 @@ via queries and setup during the entity creation.</Description>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-	<PackageVersion>1.2.1</PackageVersion>
+	<PackageVersion>1.2.2</PackageVersion>
+	<OutputPath>bin/Package</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>

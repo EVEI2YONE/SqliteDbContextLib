@@ -12,16 +12,17 @@ namespace SqliteDbContext.Context
         private T? context;
         private static IDictionary<Type, Delegate> postDependencyResolvers = new Dictionary<Type, Delegate>();
         public T? Context => context;
-        private DbContextOptions<T> _options;
+        private SqliteConnection _connection;
         public DbContextOptions<T> Options => _options;
+        private DbContextOptions<T> _options;
 
         public SqliteDbContext(string? DbInstanceName = null, SqliteConnection? conn = null)
         {
-            CreateConnection(DbInstanceName, conn);
+            _connection = CreateConnection(DbInstanceName, conn);
             bogus = new BogusGenerator(context);
         }
 
-        private void CreateConnection(string? dbIntanceName, SqliteConnection? conn)
+        private SqliteConnection CreateConnection(string? dbIntanceName, SqliteConnection? conn)
         {
             dbIntanceName = dbIntanceName ?? Guid.NewGuid().ToString();
             if(conn == null)
@@ -42,6 +43,7 @@ namespace SqliteDbContext.Context
             context = (T?)Activator.CreateInstance(typeof(T), _options);
             context?.Database.EnsureDeleted();
             context?.Database.EnsureCreated();
+            return conn;
         }
 
         public static void RegisterKeyAssignment<E>(Action<E, IKeySeeder> dependencyActionResolver) where E : class
@@ -94,6 +96,17 @@ namespace SqliteDbContext.Context
             }
             context?.SaveChanges();
             return entity;
+        }
+
+        public void CloseConnection()
+        {
+            _connection?.Close();
+        }
+
+        public T CreateDbContext()
+        {
+            var args = new object[] { _options };
+            return Activator.CreateInstance(typeof(T), args) as T;
         }
     }
 }

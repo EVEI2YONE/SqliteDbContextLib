@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using SQLite;
 using SqliteDbContext.Helpers;
 using System.Data.Common;
 using System.Runtime.CompilerServices;
@@ -101,6 +102,13 @@ namespace SqliteDbContext.Context
         public void CloseConnection()
         {
             _connection?.Close();
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+        }
+
+        public void CloseAllConnections()
+        {
+            SQLiteAsyncConnection.ResetPool();
         }
 
         public T CreateDbContext()

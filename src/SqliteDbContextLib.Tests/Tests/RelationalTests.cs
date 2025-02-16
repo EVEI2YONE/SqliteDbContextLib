@@ -1,8 +1,8 @@
-﻿using SqliteDbContext.Context;
+﻿using SqlDbContextLib.DataLayer.Context;
+using SqlDbContextLib.DataLayer.Domain;
+using SqliteDbContext.Context;
 using SqliteDbContext.Helpers;
 using SqliteDbContextLib.Tests.Tests;
-using SqliteDbContextLibTests.Context;
-using SqliteDbContextLibTests.Domain;
 
 namespace SqliteDbContextLibTests.Tests
 {

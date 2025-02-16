@@ -1,8 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Sqlite;
-using SqliteDbContextLibTests.Domain;
+using SqlDbContextLib.DataLayer.Domain;
 
-namespace SqliteDbContextLibTests.Context
+namespace SqlDbContextLib.DataLayer.Context
 {
     public class TestDbContext : DbContext
     {
@@ -12,6 +11,7 @@ namespace SqliteDbContextLibTests.Context
         {
         }
 
+        public virtual DbSet<User> Users { get; set; }
         public virtual DbSet<Region> Regions { get; set; }
         public virtual DbSet<Store> Stores { get; set; }
         public virtual DbSet<Customer> Customers { get; set; }
@@ -26,6 +26,14 @@ namespace SqliteDbContextLibTests.Context
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id)
+                    .ValueGeneratedOnAdd();
+                entity.Property(e => e.Name).IsRequired();
+            });
+
             modelBuilder.Entity<Region>(entity =>
             {
                 entity.HasKey(e => e.RegionId);
@@ -107,9 +115,9 @@ namespace SqliteDbContextLibTests.Context
                 entity.Property(e => e.Name).IsRequired();
             });
 
+            
 
-
-
+            
         }
     }
 }

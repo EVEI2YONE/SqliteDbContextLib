@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SqliteDbContext.DataLayer\SqliteDbContext.DataLayer.csproj" />
     <ProjectReference Include="..\SqliteDbContextLib\SqliteDbContext.csproj" />
   </ItemGroup>
 

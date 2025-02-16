@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SqlDbContextLib.DataLayer.Context;
+using SqlDbContextLib.DataLayer.Domain;
 using SqliteDbContext.Context;
-using SqliteDbContextLibTests.Context;
-using SqliteDbContextLibTests.Domain;
 using System;
 using System.Collections.Generic;
 using System.Linq;

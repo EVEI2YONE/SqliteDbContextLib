@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqliteDbContext", "src\Sqli
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqliteDbContextLib.Tests", "src\SqliteDbContextLib.Tests\SqliteDbContextLib.Tests.csproj", "{9BF6781C-E04F-89DB-18DB-9B62E36A0896}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqliteDbContext.DataLayer", "src\SqliteDbContext.DataLayer\SqliteDbContext.DataLayer.csproj", "{82B9FD5D-33BD-F21F-143B-56434B8B4410}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{9BF6781C-E04F-89DB-18DB-9B62E36A0896}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9BF6781C-E04F-89DB-18DB-9B62E36A0896}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9BF6781C-E04F-89DB-18DB-9B62E36A0896}.Release|Any CPU.Build.0 = Release|Any CPU
+		{82B9FD5D-33BD-F21F-143B-56434B8B4410}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82B9FD5D-33BD-F21F-143B-56434B8B4410}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82B9FD5D-33BD-F21F-143B-56434B8B4410}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82B9FD5D-33BD-F21F-143B-56434B8B4410}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

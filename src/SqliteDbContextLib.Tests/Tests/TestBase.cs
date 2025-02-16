@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SqliteDbContext.Context;
 using SqliteDbContextLibTests.Context;
-using SqliteDbContextLibTests.Entities;
+using SqliteDbContextLibTests.Domain;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,37 +12,44 @@ namespace SqliteDbContextLib.Tests.Tests
 {
     internal class TestBase
     {
-        protected void RegisterDbContextDependencies(SqliteDbContext<EntityProjectContext> sqliteDbContext)
+        protected void RegisterDbContextDependencies(SqliteDbContext<TestDbContext> sqliteDbContext)
         {
-            sqliteDbContext.RegisterKeyAssignment<Table1>((table, seeder, ctx) =>
+            sqliteDbContext.RegisterKeyAssignment<Customer>((customer, seeder, ctx) =>
             {
-                table.Col1_PK = seeder.IncrementKeys<Table1>().First();
+                customer.CustomerId = (int)seeder.IncrementKeys<Customer>().First();
             });
 
-            sqliteDbContext.RegisterKeyAssignment<Table2>((table, seeder, ctx) =>
+            sqliteDbContext.RegisterKeyAssignment<Store>((store, seeder, ctx) =>
             {
-                table.Col1_PK = (int)seeder.IncrementKeys<Table2>().First();
-                table.Col2_FK = seeder.GetRandomKeys<Table1>().First();
+                store.StoreId = (int)seeder.IncrementKeys<Store>().First();
+                store.RegionId = (int)seeder.GetRandomKeys<Region>().First();
             });
 
-            sqliteDbContext.RegisterKeyAssignment<Table3>((table, seeder, ctx) =>
+            sqliteDbContext.RegisterKeyAssignment<Product>((product, seeder, ctx) =>
             {
-                var query = ctx.Table2.Select(x => new object[] { x.Table1.Col1_PK, x.Col1_PK });
-                var keys = seeder.GetUniqueRandomKeys<Table3>(ctx, query);
-                table.Col1_PKFK = (long)keys.First();
-                table.Col2_FK = (int)keys.Last();
+                product.ProductId = (int) seeder.IncrementKeys<Product>().First();
             });
 
-            sqliteDbContext.RegisterKeyAssignment<Table4>((table, seeder, ctx) =>
+            sqliteDbContext.RegisterKeyAssignment<Purchase>((purchase, seeder, ctx) =>
             {
-                var query = ctx.Table3.Select(x => new object[] { x.Table1.Col1_PK, x.Table2.Col1_PK, x.Col1_PKFK, x.Col2_FK });
-
-                var keys = seeder.GetUniqueRandomKeys<Table4>(ctx, query);
-                table.Col1_T1PKFK = (long)keys.GetValue(0);
-                table.Col2_T2PKFK = (int)keys.GetValue(1);
-                table.Col3_T3PKFK_PKFK = (long)keys.GetValue(2);
-                table.Col4_T3PKFK_FK = (int)keys.GetValue(3);
+                purchase.PurchaseId = (int)seeder.IncrementKeys<Purchase>().First();
+                purchase.CustomerId = (int)seeder.GetRandomKeys<Customer>().First();
+                purchase.ProductId = (int)seeder.GetRandomKeys<Product>().First();
+                purchase.StoreId = (int)seeder.GetRandomKeys<Store>().First();
             });
+
+            sqliteDbContext.RegisterKeyAssignment<Region>((region, seeder, ctx) =>
+            {
+                region.RegionId = (int)seeder.IncrementKeys<Region>().First();
+            });
+
+            sqliteDbContext.RegisterKeyAssignment<Sale>((sale, seeder, ctx) =>
+            {
+                sale.SaleId = (int)seeder.IncrementKeys<Sale>().First();
+                sale.StoreId = (int)seeder.GetRandomKeys<Store>().First();
+            });
+
+            
         }
     }
 }

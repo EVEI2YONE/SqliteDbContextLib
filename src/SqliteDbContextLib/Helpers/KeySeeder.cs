@@ -41,13 +41,13 @@ namespace SqliteDbContext.Helpers
         public void InitializeKeys<T>(params long[] initialValues)
         {
             Type type = typeof(T);
-            if (initialValues == null)
+            if (initialValues == null || initialValues.Length == 0)
             {
                 InitializeKeys<T>(GetKeyPropertyNames<T>().Select(x => (long)0).ToArray());
                 return;
             }
-            else if (initialValues.Length == 0)
-                throw new Exception($"{type.Name} expected to key attribute properties with initial values passed");
+            //else if (initialValues.Length == 0)
+            //    throw new Exception($"{type.Name} expected to key attribute properties with initial values passed");
 
             var keyPropertyNames = GetKeyPropertyNames<T>();
             if (!keyPropertyNames.Any())
@@ -145,6 +145,8 @@ namespace SqliteDbContext.Helpers
         public IEnumerable<long> GetRandomKeys<T>()
         {
             var keys = PeekKeys<T>();
+            if (!keys.Any())
+                throw new Exception($"Generate dependent entities first to track generated PKs that can be pulled for a random FK value {typeof(T).Name}");
             var initial = GetInitialKeys<T>();
             var randomKeys = new List<long>();
             for (int i = 0; i < initial.Count(); i++)

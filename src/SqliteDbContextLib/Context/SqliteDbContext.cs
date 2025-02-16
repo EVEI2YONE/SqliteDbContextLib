@@ -1,6 +1,7 @@
 ﻿using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using SqliteDbContext.Helpers;
+using System.Data.Common;
 using System.Runtime.CompilerServices;
 
 namespace SqliteDbContext.Context
@@ -10,26 +11,35 @@ namespace SqliteDbContext.Context
         private BogusGenerator bogus;
         private T? context;
         private static IDictionary<Type, Delegate> postDependencyResolvers = new Dictionary<Type, Delegate>();
-        public T? Context { get { return context; } }
+        public T? Context => context;
+        private DbContextOptions<T> _options;
+        public DbContextOptions<T> Options => _options;
 
-        public SqliteDbContext(string? DbInstanceName = null)
+        public SqliteDbContext(string? DbInstanceName = null, SqliteConnection? conn = null)
         {
-            CreateConnection(DbInstanceName);
+            CreateConnection(DbInstanceName, conn);
             bogus = new BogusGenerator(context);
         }
 
-        private void CreateConnection(string? dbIntanceName)
+        private void CreateConnection(string? dbIntanceName, SqliteConnection? conn)
         {
             dbIntanceName = dbIntanceName ?? Guid.NewGuid().ToString();
-            var config = new SqliteConnectionStringBuilder { DataSource = $"{dbIntanceName}:memory:", Mode = SqliteOpenMode.Memory, Cache = SqliteCacheMode.Shared };
-            SqliteConnection connection = new SqliteConnection(config.ToString());
-            connection.Open();
+            if(conn == null)
+            {
+                var config = new SqliteConnectionStringBuilder { DataSource = $"{dbIntanceName}:memory:", Mode = SqliteOpenMode.Memory, Cache = SqliteCacheMode.Shared };
+                conn = new SqliteConnection(config.ToString());
+            }
 
-            var options = new DbContextOptionsBuilder<T>()
-              .UseSqlite(connection)
-              .Options;
+            if(conn.State != System.Data.ConnectionState.Open)
+            {
+                conn.Open();
+            }
 
-            context = (T?)Activator.CreateInstance(typeof(T), options);
+            _options = new DbContextOptionsBuilder<T>()
+                .UseSqlite(conn)
+                .Options;
+
+            context = (T?)Activator.CreateInstance(typeof(T), _options);
             context?.Database.EnsureDeleted();
             context?.Database.EnsureCreated();
         }

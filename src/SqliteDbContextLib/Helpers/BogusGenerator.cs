@@ -106,9 +106,9 @@ namespace SqliteDbContext.Helpers
             initializeAction(entity);
         }
 
-        public void ApplyDependencyAction<E>(E entity, Action<E, IKeySeeder> dependencyAction) where E : class
+        public void ApplyDependencyAction<E, T>(E entity, Action<E, IKeySeeder, T> dependencyAction, T ctx) where E : class where T : DbContext
         {
-            dependencyAction(entity, keySeeder);
+            dependencyAction(entity, keySeeder, ctx);
         }
     }
 }

@@ -10,7 +10,7 @@ namespace SqliteDbContext.Context
     {
         private BogusGenerator bogus;
         private T? context;
-        private static IDictionary<Type, Delegate> postDependencyResolvers = new Dictionary<Type, Delegate>();
+        private IDictionary<Type, Delegate> postDependencyResolvers = new Dictionary<Type, Delegate>();
         public T? Context => context;
         private SqliteConnection _connection;
         public DbContextOptions<T> Options => _options;
@@ -46,7 +46,7 @@ namespace SqliteDbContext.Context
             return conn;
         }
 
-        public static void RegisterKeyAssignment<E>(Action<E, IKeySeeder> dependencyActionResolver) where E : class
+        public void RegisterKeyAssignment<E>(Action<E, IKeySeeder, T> dependencyActionResolver) where E : class
             => postDependencyResolvers.TryAdd(typeof(E), dependencyActionResolver);
 
         public List<E> GenerateEntities<E>(int count, Action<E>? initializeAction = null) where E : class
@@ -79,7 +79,7 @@ namespace SqliteDbContext.Context
                         throw new Exception($"Didn't update all keys required to override autogeneration");
                     do //if entity is found, then it was generated ahead of time - skip and generate next valid entity
                     {
-                        bogus.ApplyDependencyAction(entity, (Action<E, IKeySeeder>)postDependencyResolvers[type]);
+                        bogus.ApplyDependencyAction<E,T>(entity, (Action<E, IKeySeeder, T>)postDependencyResolvers[type], context);
                         search = context?.Set<E>()?.Find(entity.GetKeys());
                     } while (search != null);
                 }

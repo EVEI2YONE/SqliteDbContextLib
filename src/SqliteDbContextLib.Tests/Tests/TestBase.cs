@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SqlDbContextLib.DataLayer.Context;
-using SqlDbContextLib.DataLayer.Domain;
+using SmoothBrainDevelopers.DataLayer.Test.Context;
+using SmoothBrainDevelopers.DataLayer.Test.Domain;
 using SqliteDbContext.Context;
 using System;
 using System.Collections.Generic;

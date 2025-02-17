@@ -1,5 +1,5 @@
-﻿using SqlDbContextLib.DataLayer.Context;
-using SqlDbContextLib.DataLayer.Domain;
+﻿using SmoothBrainDevelopers.DataLayer.Test.Context;
+using SmoothBrainDevelopers.DataLayer.Test.Domain;
 using SqliteDbContext.Context;
 using SqliteDbContext.Helpers;
 using SqliteDbContextLib.Tests.Tests;

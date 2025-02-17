@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SqliteDbContext.Helpers
+namespace SqliteDbContext.Extensions
 {
     internal static class ObjectExtensions
     {

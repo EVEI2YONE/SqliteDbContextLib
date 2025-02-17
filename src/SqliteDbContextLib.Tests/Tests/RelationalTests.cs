@@ -2,6 +2,7 @@
 using SmoothBrainDevelopers.DataLayer.Test.Domain;
 using SqliteDbContext.Context;
 using SqliteDbContext.Helpers;
+using SqliteDbContext.Helpers.Strategies;
 using SqliteDbContextLib.Tests.Tests;
 
 namespace SqliteDbContextLibTests.Tests
@@ -25,7 +26,8 @@ namespace SqliteDbContextLibTests.Tests
         public void DisplayDependencies()
         {
             var dependencyResolver = new DependencyResolver(ctx);
-            Console.WriteLine(string.Join("\n", dependencyResolver.GetDependencyOrder().Select(x => x.Name)));
+            //Console.WriteLine(string.Join("\n", dependencyResolver.GetDependencyOrder().Select(x => x.Name)));
+            Console.WriteLine(string.Join("\n", dependencyResolver.GetOrderedEntityTypes()));
         }
 
         [TestCase(1)]

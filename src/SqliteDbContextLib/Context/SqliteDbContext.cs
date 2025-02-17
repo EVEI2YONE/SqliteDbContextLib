@@ -1,7 +1,9 @@
 ﻿using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using SQLite;
-using SqliteDbContext.Helpers;
+using SqliteDbContext.Extensions;
+using SqliteDbContext.Helpers.Generator;
+using SqliteDbContext.Helpers.Strategies;
 using System.Data.Common;
 using System.Runtime.CompilerServices;
 
@@ -16,11 +18,14 @@ namespace SqliteDbContext.Context
         private SqliteConnection _connection;
         public DbContextOptions<T> Options => _options;
         private DbContextOptions<T> _options;
+        private DependencyResolver _dependencyResolver;
+        public DependencyResolver DependencyResolver => _dependencyResolver;
 
         public SqliteDbContext(string? DbInstanceName = null, SqliteConnection? conn = null)
         {
             _connection = CreateConnection(DbInstanceName, conn);
             bogus = new BogusGenerator(context);
+            _dependencyResolver = new DependencyResolver(context);
         }
 
         private SqliteConnection CreateConnection(string? dbIntanceName, SqliteConnection? conn)

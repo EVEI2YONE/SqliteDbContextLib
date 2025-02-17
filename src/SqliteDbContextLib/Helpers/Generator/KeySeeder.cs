@@ -11,7 +11,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SqliteDbContext.Helpers
+namespace SqliteDbContext.Helpers.Generator
 {
     public interface IKeySeeder
     {

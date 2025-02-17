@@ -1,8 +1,7 @@
 ﻿using SmoothBrainDevelopers.DataLayer.Test.Context;
 using SmoothBrainDevelopers.DataLayer.Test.Domain;
 using SqliteDbContext.Context;
-using SqliteDbContext.Helpers;
-using SqliteDbContext.Helpers.Strategies;
+using SqliteDbContext.Strategies;
 using SqliteDbContextLib.Tests.Tests;
 
 namespace SqliteDbContextLibTests.Tests

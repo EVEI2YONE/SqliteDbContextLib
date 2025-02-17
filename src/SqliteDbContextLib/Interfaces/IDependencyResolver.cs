@@ -13,24 +13,10 @@ namespace SqliteDbContext.Interfaces
     /// </summary>
     public interface IDependencyResolver
     {
-        /// <summary>
-        /// Retrieves metadata for all entities in the model.
-        /// </summary>
         IEnumerable<EntityMetadata> GetEntityMetadata();
-
-        /// <summary>
-        /// Returns entity types ordered by dependency (least-dependent first).
-        /// </summary>
         IEnumerable<Type> GetOrderedEntityTypes();
-
-        /// <summary>
-        /// Retrieves a cached lambda expression for selecting a property by name.
-        /// </summary>
         Expression<Func<TEntity, object>> GetPropertyLambda<TEntity>(string propertyName);
-
-        /// <summary>
-        /// Builds a dynamic join query between two entities based on the key relationship.
-        /// </summary>
+        Expression<Func<TEntity, object[]>> GetCompositeKeyLambda<TEntity>(IEnumerable<string> propertyNames);
         IQueryable<dynamic> BuildJoinQuery<TPrincipal, TDependent>(
             IQueryable<TPrincipal> principalQuery,
             IQueryable<TDependent> dependentQuery,

@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using SqliteDbContext.Helpers.Metadata;
 using SqliteDbContext.Interfaces;
+using SqliteDbContext.Metadata;
 using SqliteDbContext.Models;
 using System;
 using System.Collections.Generic;
@@ -11,10 +11,10 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SqliteDbContext.Helpers.Strategies
+namespace SqliteDbContext.Strategies
 {
     /// <summary>
-    /// Resolves dependency and key metadata from a DbContext, and provides helper methods for dynamic query construction.
+    /// Resolves dependency and key metadata from a DbContext and provides helper methods for dynamic query construction.
     /// </summary>
     public class DependencyResolver : IDependencyResolver
     {
@@ -38,6 +38,9 @@ namespace SqliteDbContext.Helpers.Strategies
         public Expression<Func<TEntity, object>> GetPropertyLambda<TEntity>(string propertyName) =>
             LambdaCache.GetOrAdd<TEntity>(propertyName);
 
+        public Expression<Func<TEntity, object[]>> GetCompositeKeyLambda<TEntity>(IEnumerable<string> propertyNames) =>
+            LambdaCache.GetOrAddComposite<TEntity>(propertyNames);
+
         public IQueryable<dynamic> BuildJoinQuery<TPrincipal, TDependent>(
             IQueryable<TPrincipal> principalQuery,
             IQueryable<TDependent> dependentQuery,
@@ -49,14 +52,12 @@ namespace SqliteDbContext.Helpers.Strategies
             if (principalMeta == null || !principalMeta.PrimaryKeys.Any())
                 throw new InvalidOperationException("Principal entity does not have a primary key defined.");
 
+            // For simplicity, use the first primary key.
             var principalKey = principalMeta.PrimaryKeys.First();
             var principalLambda = GetPropertyLambda<TPrincipal>(principalKey);
             var dependentLambda = GetPropertyLambda<TDependent>(dependentForeignKey);
 
-            return principalQuery.Join(
-                dependentQuery,
-                principalLambda,
-                dependentLambda,
+            return principalQuery.Join(dependentQuery, principalLambda, dependentLambda,
                 (principal, dependent) => new { Principal = principal, Dependent = dependent });
         }
     }

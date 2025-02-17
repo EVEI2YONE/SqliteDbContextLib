@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SqliteDbContext.Models
+namespace SqliteDbContext.Metadata
 {
     /// <summary>
     /// Represents a foreign key relationship.

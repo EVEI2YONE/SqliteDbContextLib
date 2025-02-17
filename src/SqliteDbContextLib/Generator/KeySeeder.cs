@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
+using SqliteDbContext.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -11,7 +12,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SqliteDbContext.Helpers.Generator
+namespace SqliteDbContext.Generator
 {
     public interface IKeySeeder
     {
@@ -25,7 +26,7 @@ namespace SqliteDbContext.Helpers.Generator
         public IEnumerable<long> PeekKeys<T>();
         public void DecrementKeys<T>();
         public IEnumerable<long> GetRandomKeys<T>();
-        public object[] GetUniqueRandomKeys<T>(DbContext context, IQueryable<object[]> QueryUniqueKeys) where T : class;
+        public List<int> GetUniqueRandomKeys<T>(params string[] keyProperties) where T : class;
     }
 
     public class KeySeeder : IKeySeeder
@@ -34,6 +35,15 @@ namespace SqliteDbContext.Helpers.Generator
         private readonly IDictionary<Type, IDictionary<string, long>> InitialKeys = new Dictionary<Type, IDictionary<string, long>>();
         private readonly IDictionary<Type, IDictionary<string, long>> CurrentKeys = new Dictionary<Type, IDictionary<string, long>>();
         private readonly Random random = new Random();
+
+        private readonly DbContext _context;
+        private readonly IDependencyResolver _dependencyResolver;
+
+        public KeySeeder(DbContext context, IDependencyResolver dependencyResolver)
+        {
+            _context = context;
+            _dependencyResolver = dependencyResolver;
+        }
 
         private IEnumerable<string> GetKeyPropertyNames<T>()
             => typeof(T).GetProperties().Where(x => x.GetCustomAttribute<KeyAttribute>() != null).Select(x => x.Name);
@@ -158,26 +168,17 @@ namespace SqliteDbContext.Helpers.Generator
             return randomKeys;
         }
 
-        private ICollection<string> uniqueKeysSelected = new HashSet<string>();
-        public object[] GetUniqueRandomKeys<T>(DbContext context, IQueryable<object[]> QueryUniqueKeys) where T : class
+        /// <summary>
+        /// Retrieves unique random keys using a composite key query.
+        /// For example, for an entity with keys "CustomerID", "ProductID", "StoreID".
+        /// </summary>
+        public List<int> GetUniqueRandomKeys<T>(params string[] keyProperties) where T : class
         {
-            int attempts = 0;
-            object[] keySet;
-            int index = -1;
-            var uniqueKeys = QueryUniqueKeys.AsEnumerable().Where(x => !uniqueKeysSelected.Contains(UniqueKey<T>(x))).ToList();
-            do
-            {
-                if (!uniqueKeys.Any())
-                    throw new Exception("Need more entities to produce unique set of keys");
-                if (attempts++ > 1000)
-                    throw new Exception("Update logic to produce unique key set");
-                if (index > -1)
-                    uniqueKeys.RemoveAt(index);
-                index = random.Next(0, uniqueKeys.Count);
-                keySet = uniqueKeys.ElementAt(index);
-            } while (context.Set<T>().Find(keySet) != null);
-            uniqueKeysSelected.Add(UniqueKey<T>(keySet));
-            return keySet;
+            Expression<Func<T, object[]>> compositeLambda = _dependencyResolver.GetCompositeKeyLambda<T>(keyProperties);
+            var keyValues = _context.Set<T>().Select(compositeLambda).FirstOrDefault();
+            if (keyValues != null)
+                return keyValues.Select(x => Convert.ToInt32(x)).ToList();
+            return new List<int>();
         }
 
         private string UniqueKey<T>(object[] ids)

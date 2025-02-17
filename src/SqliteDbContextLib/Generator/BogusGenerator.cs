@@ -1,6 +1,7 @@
 ﻿using AutoPopulate;
 using Bogus;
 using Microsoft.EntityFrameworkCore;
+using SqliteDbContext.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -10,21 +11,29 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SqliteDbContext.Helpers.Generator
+namespace SqliteDbContext.Generator
 {
     public class BogusGenerator
     {
         private DbContext dbcontext;
         private EntityGenerator autopopulate = new EntityGenerator();
-        private IKeySeeder keySeeder = new KeySeeder();
-        public BogusGenerator(DbContext? context)
+        private IKeySeeder keySeeder;
+        public BogusGenerator(DbContext? context, IDependencyResolver dependencyResolver)
         {
             if (context == null)
                 throw new ArgumentException("Must have value supplied", nameof(context), null);
             autopopulate.DefaultValues = typeSwitch;
             dbcontext = context;
-            keySeeder.ClearAllKeys();
+            keySeeder = new KeySeeder(context, dependencyResolver);
         }
+
+        private readonly IDependencyResolver _dependencyResolver;
+
+        public BogusGenerator(IDependencyResolver dependencyResolver)
+        {
+            _dependencyResolver = dependencyResolver;
+        }
+
 
         private static Faker f = new Faker();
         public static Dictionary<Type, Delegate> typeSwitch = new Dictionary<Type, Delegate> {

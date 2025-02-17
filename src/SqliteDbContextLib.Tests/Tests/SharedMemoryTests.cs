@@ -63,7 +63,6 @@ namespace SqliteDbContextLib.Tests.Tests
         public void SqliteDbContext_SharedMemoryTest()
         {
             var dbContext = new SqliteDbContext<TestDbContext>();
-            base.RegisterDbContextDependencies(dbContext);
 
             var region = dbContext.GenerateEntity<Region>();
             var store = dbContext.GenerateEntity<Store>();

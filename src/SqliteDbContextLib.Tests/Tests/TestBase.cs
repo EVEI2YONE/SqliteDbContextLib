@@ -12,7 +12,21 @@ namespace SqliteDbContextLib.Tests.Tests
 {
     internal class TestBase
     {
-        protected void RegisterDbContextDependencies(SqliteDbContext<TestDbContext> sqliteDbContext)
+
+        protected SqliteDbContext<TestDbContext> context;
+        protected TestDbContext ctx;
+        private static Random random = new Random();
+
+        [SetUp]
+        public void Setup()
+        {
+            context = new SqliteDbContext<TestDbContext>();
+            context.KeySeeder.ExistingReferenceChance = 1; //if a reference exists, don't generate new instances
+            RegisterDbContextDependencies(context);
+            ctx = context.Context;
+        }
+
+        private void RegisterDbContextDependencies(SqliteDbContext<TestDbContext> sqliteDbContext)
         {
             //sqliteDbContext.RegisterKeyAssignment<Customer>((customer, seeder, ctx) =>
             //{
@@ -48,8 +62,6 @@ namespace SqliteDbContextLib.Tests.Tests
             //    sale.SaleId = (int)seeder.IncrementKeys<Sale>().First();
             //    sale.StoreId = (int)seeder.GetRandomKeys<Store>().First();
             //});
-
-            
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Bogus;
+﻿using AutoPopulate;
+using Bogus;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
@@ -15,51 +16,40 @@ using System.Threading.Tasks;
 
 namespace SqliteDbContext.Generator
 {
-    public interface IKeySeeder
-    {
-        public IEnumerable<long> GetInitialKeys<T>();
-        public void InitializeKeys<T>(params long[] initialValues);
-        public void ResetKeys<T>();
-        public void ResetAllKeys();
-        public void ClearKeys<T>();
-        public void ClearAllKeys();
-        public IEnumerable<long> IncrementKeys<T>();
-        public IEnumerable<long> PeekKeys<T>();
-        public void DecrementKeys<T>();
-        public IEnumerable<long> GetRandomKeys<T>();
-        public List<int> GetUniqueRandomKeys<T>(params string[] keyProperties) where T : class;
-    }
-
     /// <summary>
     /// Keeps track of generated IDs/keys per entity type.
     /// Handles auto-incrementing for numeric keys and retrieval of valid foreign keys.
     /// </summary>
-    public class KeySeeder
+    public class KeySeeder : IKeySeeder
     {
+        private readonly Random _rng;
         private readonly DbContext _context;
         private readonly IDependencyResolver _dependencyResolver;
-        private readonly Random _rng;
-
-        // Stores the last assigned key value per entity type and property.
+        private readonly IEntityGenerator _entityGenerator;
         private readonly ConcurrentDictionary<(Type, string), object> _currentKeys = new ConcurrentDictionary<(Type, string), object>();
 
-        // Delegate that can be overridden by developers to provide custom key fetching logic.
+        // Allow developers to override key fetching logic.
         public Func<Type, string, object> CustomKeyFetcher { get; set; }
-
-        // Flag to indicate whether to prefer existing dependent entities for foreign keys.
         public bool AllowExistingForeignKeys { get; set; } = true;
+        /// <summary>
+        /// Chance (from 0.0 to 1.0) to use an existing dependent instance rather than generating a new one.
+        /// </summary>
+        public double ExistingReferenceChance { get; set; } = 0.7;
 
-        public KeySeeder(DbContext context, IDependencyResolver dependencyResolver)
+        private const int MaxRecursionDepth = 5;
+
+        public KeySeeder(DbContext context, IDependencyResolver dependencyResolver, IEntityGenerator entityGenerator)
         {
             _context = context;
             _dependencyResolver = dependencyResolver;
+            _entityGenerator = entityGenerator ?? new EntityGenerator();
             _rng = new Random();
         }
 
         /// <summary>
-        /// Clears the key properties of an entity (using DependencyResolver metadata) so they can be re-assigned.
+        /// Clears primary key properties of the entity.
         /// </summary>
-        public void ClearKeyProperties<T>(T entity) where T : class
+        public void ClearKeyProperties<T>(T entity, int recursionDepth = 0) where T : class
         {
             var meta = _dependencyResolver.GetEntityMetadata().FirstOrDefault(e => e.EntityType == typeof(T));
             if (meta == null) return;
@@ -67,39 +57,35 @@ namespace SqliteDbContext.Generator
             {
                 var propInfo = typeof(T).GetProperty(keyProp);
                 if (propInfo != null && propInfo.CanWrite)
-                {
-                    // Set default value.
                     propInfo.SetValue(entity, GetDefault(propInfo.PropertyType));
-                }
             }
         }
 
         /// <summary>
-        /// Assigns keys to an entity by auto-incrementing numeric keys or fetching valid foreign keys.
+        /// Assigns primary and foreign keys to the entity.
+        /// For foreign keys, if dependent instances exist, uses ExistingReferenceChance to decide whether to reuse or generate a new one.
         /// </summary>
-        public void AssignKeys<T>(T entity) where T : class
+        public void AssignKeys<T>(T entity, int recursionDepth = 0) where T : class
         {
+            if (recursionDepth >= MaxRecursionDepth)
+                throw new InvalidOperationException($"Maximum recursion depth reached for type {typeof(T).FullName}.");
+
             var meta = _dependencyResolver.GetEntityMetadata().FirstOrDefault(e => e.EntityType == typeof(T));
             if (meta == null) return;
+
+            // Assign primary keys.
             foreach (var keyProp in meta.PrimaryKeys)
             {
                 var propInfo = typeof(T).GetProperty(keyProp);
                 if (propInfo != null && propInfo.CanWrite)
                 {
-                    object newKey = null;
-                    // Allow custom key fetcher override.
-                    if (CustomKeyFetcher != null)
-                    {
-                        newKey = CustomKeyFetcher(typeof(T), keyProp);
-                    }
-                    else
-                    {
-                        newKey = AutoIncrementKey(typeof(T), keyProp, propInfo.PropertyType);
-                    }
+                    object newKey = CustomKeyFetcher != null ? CustomKeyFetcher(typeof(T), keyProp)
+                                      : AutoIncrementKey(typeof(T), keyProp, propInfo.PropertyType);
                     propInfo.SetValue(entity, newKey);
                 }
             }
-            // For foreign keys, if allowed, assign existing valid keys.
+
+            // Process foreign keys.
             foreach (var foreign in meta.ForeignKeys)
             {
                 foreach (var fkProp in foreign.ForeignKeyProperties)
@@ -107,39 +93,77 @@ namespace SqliteDbContext.Generator
                     var propInfo = typeof(T).GetProperty(fkProp);
                     if (propInfo != null && propInfo.CanWrite)
                     {
-                        // Attempt to fetch a random valid key from the referenced entity.
-                        var foreignType = _context.Model.FindEntityType(typeof(T)).GetForeignKeys()
-                            .FirstOrDefault(fk => fk.Properties.Any(p => p.Name == fkProp))?.PrincipalEntityType.ClrType;
+                        // Find the dependent (principal) type for this foreign key.
+                        var foreignType = _context.Model.FindEntityType(typeof(T))
+                                            .GetForeignKeys()
+                                            .FirstOrDefault(fk => fk.Properties.Any(p => p.Name == fkProp))
+                                            ?.PrincipalEntityType.ClrType;
                         if (foreignType != null && AllowExistingForeignKeys)
                         {
                             var set = GetQueryableForType(_context, foreignType);
-                            // Get a random entity's key value.
-                            var randomKey = set.Cast<object>().FirstOrDefault();
-                            if (randomKey != null)
+                            int count = set.Cast<object>().Count();
+                            if (count > 0)
                             {
-                                // Assume the foreign key property matches the primary key of the referenced entity.
-                                propInfo.SetValue(entity, GetKeyValue(randomKey));
+                                if (_rng.NextDouble() < ExistingReferenceChance)
+                                {
+                                    // Choose an existing instance at random.
+                                    var list = set.Cast<object>().ToList();
+                                    var randomIndex = _rng.Next(list.Count);
+                                    var randomInstance = list[randomIndex];
+                                    propInfo.SetValue(entity, GetKeyValue(randomInstance));
+                                    continue;
+                                }
+                                else
+                                {
+                                    // Generate a new dependent instance (recursively).
+                                    var newDependent = GenerateDependentInstance(foreignType, recursionDepth + 1);
+                                    propInfo.SetValue(entity, GetKeyValue(newDependent));
+                                    continue;
+                                }
+                            }
+                            else
+                            {
+                                // No existing instance; generate a new one.
+                                var newDependent = GenerateDependentInstance(foreignType, recursionDepth + 1);
+                                propInfo.SetValue(entity, GetKeyValue(newDependent));
                                 continue;
                             }
                         }
-                        // If no valid foreign key exists, assign a new key.
+                        // Fallback: assign an auto-incremented key.
                         propInfo.SetValue(entity, AutoIncrementKey(typeof(T), fkProp, propInfo.PropertyType));
                     }
                 }
             }
         }
 
-        private IQueryable GetQueryableForType(DbContext ctx, Type entityType)
+        /// <summary>
+        /// Generates a new dependent instance for the specified type.
+        /// This method is recursive—if the new instance has foreign keys, those will be processed (up to MaxRecursionDepth).
+        /// </summary>
+        private object GenerateDependentInstance(Type entityType, int recursionDepth = 0)
         {
-            // Get the generic "Set<TEntity>()" method from DbContext and invoke it with the foreignType.
-            var method = typeof(DbContext).GetMethod("Set", Type.EmptyTypes);
-            var generic = method.MakeGenericMethod(entityType);
-            return (IQueryable)generic.Invoke(ctx, null);
+            if (recursionDepth >= MaxRecursionDepth)
+                throw new InvalidOperationException($"Maximum recursion depth reached when generating dependent instance for {entityType.FullName}.");
+
+            var instance = _entityGenerator.CreateFake(entityType);
+            // Clear and assign keys for the new instance (using the generic methods via reflection).
+            var clearMethod = GetType().GetMethod("ClearKeyProperties", BindingFlags.Public | BindingFlags.Instance)
+                              .MakeGenericMethod(entityType);
+            clearMethod.Invoke(this, new object[] { instance, recursionDepth });
+            var assignMethod = GetType().GetMethod("AssignKeys", BindingFlags.Public | BindingFlags.Instance)
+                               .MakeGenericMethod(entityType);
+            assignMethod.Invoke(this, new object[] { instance, recursionDepth });
+            // Add the instance to the context.
+            var setMethod = typeof(DbContext).GetMethod("Set", Type.EmptyTypes).MakeGenericMethod(entityType);
+            var dbSet = setMethod.Invoke(_context, null);
+            var addMethod = dbSet.GetType().GetMethod("Add", new Type[] { entityType });
+            addMethod.Invoke(dbSet, new object[] { instance });
+            _context.SaveChanges();
+            return instance;
         }
 
-        /// <summary>
-        /// Auto-increments numeric keys or generates new values for other types.
-        /// </summary>
+        // ---------- Helper Methods ----------
+
         private object AutoIncrementKey(Type entityType, string propertyName, Type keyType)
         {
             var key = (entityType, propertyName);
@@ -169,19 +193,14 @@ namespace SqliteDbContext.Generator
             }
             else
             {
-                // Fallback: attempt to increment if possible, otherwise return default.
                 newVal = GetDefault(keyType);
             }
             _currentKeys[key] = newVal;
             return newVal;
         }
 
-        /// <summary>
-        /// Retrieves the key value from an entity using reflection.
-        /// </summary>
         private object GetKeyValue(object entity)
         {
-            // Assume the entity has a single primary key.
             var key = _context.Model.FindEntityType(entity.GetType())?.FindPrimaryKey();
             if (key != null && key.Properties.Any())
             {
@@ -193,5 +212,12 @@ namespace SqliteDbContext.Generator
         }
 
         private object GetDefault(Type type) => type.IsValueType ? Activator.CreateInstance(type) : null;
+
+        private IQueryable GetQueryableForType(DbContext ctx, Type entityType)
+        {
+            var method = typeof(DbContext).GetMethod("Set", Type.EmptyTypes);
+            var generic = method.MakeGenericMethod(entityType);
+            return (IQueryable)generic.Invoke(ctx, null);
+        }
     }
 }

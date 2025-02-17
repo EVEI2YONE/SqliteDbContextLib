@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using AutoPopulate;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using SQLite;
 using SqliteDbContext.Extensions;
@@ -19,8 +20,9 @@ namespace SqliteDbContext.Context
     {
         public T Context { get; private set; }
         public IDependencyResolver DependencyResolver { get; }
-        public KeySeeder KeySeeder { get; }
+        public IKeySeeder KeySeeder { get; }
         public BogusGenerator BogusGenerator { get; }
+        public IEntityGenerator EntityGenerator { get; }
         private SqliteConnection _connection;
         public DbContextOptions<T> Options { get; private set; }
 
@@ -28,8 +30,9 @@ namespace SqliteDbContext.Context
         {
             _connection = CreateConnection(DbInstanceName, conn);
             DependencyResolver = new DependencyResolver(Context);
-            KeySeeder = new KeySeeder(Context, DependencyResolver);
-            BogusGenerator = new BogusGenerator(DependencyResolver, KeySeeder);
+            EntityGenerator = new FakeEntityGenerator();
+            KeySeeder = new KeySeeder(Context, DependencyResolver, EntityGenerator);
+            BogusGenerator = new BogusGenerator(DependencyResolver, KeySeeder, EntityGenerator);
         }
 
         private DbSet<TEntity> Set<TEntity>() where TEntity : class => Context.Set<TEntity>();
@@ -78,8 +81,9 @@ namespace SqliteDbContext.Context
             var entity = BogusGenerator.GenerateFake<TEntity>();
             entity = BogusGenerator.RemoveNavigationProperties(entity);
             initAction?.Invoke(entity);
-            KeySeeder.ClearKeyProperties(entity);
-            KeySeeder.AssignKeys(entity);
+            // Call the new KeySeeder methods with a recursionDepth parameter.
+            KeySeeder.ClearKeyProperties(entity, 0);
+            KeySeeder.AssignKeys(entity, 0);
             Set<TEntity>().Add(entity);
             SaveChanges();
             return entity;

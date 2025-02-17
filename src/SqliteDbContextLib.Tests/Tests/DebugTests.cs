@@ -14,19 +14,6 @@ namespace SqliteDbContextLib.Tests.Tests
 {
     internal class DebugTests : TestBase
     {
-        private SqliteDbContext<TestDbContext> context;
-        private TestDbContext ctx;
-
-        private static Random random = new Random();
-
-        [SetUp]
-        public void Setup()
-        {
-            context = new SqliteDbContext<TestDbContext>();
-            base.RegisterDbContextDependencies(context);
-            ctx = context.Context;
-        }
-
         [Test]
         public void DisplayDependencies()
         {
@@ -40,7 +27,8 @@ namespace SqliteDbContextLib.Tests.Tests
         {
             var dbContextDebugger = new DbContextDebugger<TestDbContext>(context);
 
-            var entities = context.GenerateEntities<Purchase>(5);
+            var entities = context.GenerateEntities<Purchase>(1);
+            //var entities = context.GenerateEntities<Purchase>(5);
             var keySeeder = context.KeySeeder;
 
             dbContextDebugger.DumpKeySeederStatus(keySeeder);

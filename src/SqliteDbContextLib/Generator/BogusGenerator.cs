@@ -19,30 +19,15 @@ namespace SqliteDbContext.Generator
     /// </summary>
     public class BogusGenerator
     {
-        private EntityGenerator autopopulate = new EntityGenerator();
-        private static Faker f = new Faker();
-        public static Dictionary<Type, Delegate> typeSwitch = new Dictionary<Type, Delegate> {
-            { typeof(string), () => f.Random.Words(5) },
-            { typeof(bool), () => f.Random.Bool() },
-            { typeof(short), () => f.Random.Short(1) },
-            { typeof(int), () => f.Random.Int(1) },
-            { typeof(long), () => f.Random.Long(1) },
-            { typeof(decimal), () => f.Random.Decimal(1) },
-            { typeof(double), () => f.Random.Double(1) },
-            { typeof(float), () => f.Random.Float(1) },
-            { typeof(char), () => f.Random.Char() },
-            { typeof(byte), () => f.Random.Byte() },
-            { typeof(DateTime), () => f.Date.Recent(365) },
-            { typeof(Guid), () => f.Random.Guid() },
-        };
-
         private readonly IDependencyResolver _dependencyResolver;
-        private readonly KeySeeder _keySeeder;
+        private readonly IKeySeeder _keySeeder;
+        private readonly IEntityGenerator _entityGenerator;
 
-        public BogusGenerator(IDependencyResolver dependencyResolver, KeySeeder keySeeder)
+        public BogusGenerator(IDependencyResolver dependencyResolver, IKeySeeder keySeeder, IEntityGenerator entityGenerator)
         {
             _dependencyResolver = dependencyResolver;
             _keySeeder = keySeeder;
+            _entityGenerator = entityGenerator;
         }
 
         public T GenerateFake<T>() where T : class, new()
@@ -50,7 +35,7 @@ namespace SqliteDbContext.Generator
             var faker = new Faker<T>()
                 .CustomInstantiator(f =>
                 {
-                    var item = (T)autopopulate.CreateFake(typeof(T));
+                    var item = (T) _entityGenerator.CreateFake(typeof(T));
                     return item;
 
                 });

@@ -8,19 +8,6 @@ namespace SqliteDbContextLibTests.Tests
 {
     internal class RelationalTests : TestBase
     {
-        private SqliteDbContext<TestDbContext> context;
-        private TestDbContext ctx;
-
-        private static Random random = new Random();
-
-        [SetUp]
-        public void Setup()
-        {
-            context = new SqliteDbContext<TestDbContext>();
-            base.RegisterDbContextDependencies(context);
-            ctx = context.Context;
-        }
-
         [TestCase(1)]
         [TestCase(2)]
         [TestCase(5)]

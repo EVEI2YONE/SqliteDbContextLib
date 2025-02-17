@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using SqliteDbContext.Interfaces;
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -58,6 +59,36 @@ namespace SqliteDbContext.Generator
                 var propInfo = typeof(T).GetProperty(keyProp);
                 if (propInfo != null && propInfo.CanWrite)
                     propInfo.SetValue(entity, GetDefault(propInfo.PropertyType));
+            }
+        }
+
+        /// <summary>
+        /// Clears virtual (non-collection) navigation properties by setting them to null.
+        /// </summary>
+        /// <param name="instance">The entity instance whose navigation properties should be cleared.</param>
+        public void ClearNavigationReferences(object instance)
+        {
+            var type = instance.GetType();
+            foreach (var prop in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            {
+                if (!prop.CanWrite)
+                    continue;
+
+                // Skip strings.
+                if (prop.PropertyType == typeof(string))
+                    continue;
+
+                // Skip collection types (IEnumerable but not string).
+                if (typeof(IEnumerable).IsAssignableFrom(prop.PropertyType))
+                    continue;
+
+                var getter = prop.GetGetMethod();
+                // Check if the getter is virtual and not final.
+                if (getter != null && getter.IsVirtual && !getter.IsFinal)
+                {
+                    // Set this virtual navigation property to null.
+                    prop.SetValue(instance, null);
+                }
             }
         }
 
@@ -146,6 +177,8 @@ namespace SqliteDbContext.Generator
                 throw new InvalidOperationException($"Maximum recursion depth reached when generating dependent instance for {entityType.FullName}.");
 
             var instance = _entityGenerator.CreateFake(entityType);
+            // Clear virtual navigation (non-ICollection) properties so that foreign references do not override key assignments.
+            ClearNavigationReferences(instance);
             // Clear and assign keys for the new instance (using the generic methods via reflection).
             var clearMethod = GetType().GetMethod("ClearKeyProperties", BindingFlags.Public | BindingFlags.Instance)
                               .MakeGenericMethod(entityType);

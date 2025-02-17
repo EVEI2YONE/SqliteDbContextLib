@@ -32,6 +32,17 @@ namespace SqliteDbContextLib.Tests.Tests
             var keySeeder = context.KeySeeder;
 
             dbContextDebugger.DumpKeySeederStatus(keySeeder);
+            var customers = ctx.Customers.ToList();
+            var regions = ctx.Regions.ToList();
+            var stores = ctx.Stores.ToList();
+            var products = ctx.Products.ToList();
+            var purchases = ctx.Purchases.ToList();
+
+            Assert.AreEqual(1, customers.Count);
+            Assert.AreEqual(1, regions.Count);
+            Assert.AreEqual(1, stores.Count);
+            Assert.AreEqual(1, products.Count);
+            Assert.AreEqual(1, purchases.Count);
         }
     }
 }

@@ -7,103 +7,87 @@ using SqliteDbContext.Interfaces;
 using SqliteDbContext.Strategies;
 using System.Data.Common;
 using System.Runtime.CompilerServices;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace SqliteDbContext.Context
 {
+    /// <summary>
+    /// A wrapper class that encapsulates a DbContext (of type T) to simulate an in-memory DbContext.
+    /// Developers work through this wrapper to generate entities and maintain referential integrity.
+    /// </summary>
     public class SqliteDbContext<T> where T : DbContext
     {
-        private BogusGenerator bogus;
-        private T? context;
-        private IDictionary<Type, Delegate> postDependencyResolvers = new Dictionary<Type, Delegate>();
-        public T? Context => context;
+        public T Context { get; private set; }
+        public IDependencyResolver DependencyResolver { get; }
+        public KeySeeder KeySeeder { get; }
+        public BogusGenerator BogusGenerator { get; }
         private SqliteConnection _connection;
-        public DbContextOptions<T> Options => _options;
-        private DbContextOptions<T> _options;
-        public IDependencyResolver DependencyResolver { get; private set; }
+        public DbContextOptions<T> Options { get; private set; }
 
         public SqliteDbContext(string? DbInstanceName = null, SqliteConnection? conn = null)
         {
             _connection = CreateConnection(DbInstanceName, conn);
-            DependencyResolver = new DependencyResolver(context);
-            bogus = new BogusGenerator(context, DependencyResolver);
+            DependencyResolver = new DependencyResolver(Context);
+            KeySeeder = new KeySeeder(Context, DependencyResolver);
+            BogusGenerator = new BogusGenerator(DependencyResolver, KeySeeder);
         }
+
+        private DbSet<TEntity> Set<TEntity>() where TEntity : class => Context.Set<TEntity>();
 
         private SqliteConnection CreateConnection(string? dbIntanceName, SqliteConnection? conn)
         {
             dbIntanceName = dbIntanceName ?? Guid.NewGuid().ToString();
-            if(conn == null)
+            if (conn == null)
             {
                 var config = new SqliteConnectionStringBuilder { DataSource = $"{dbIntanceName}:memory:", Mode = SqliteOpenMode.Memory, Cache = SqliteCacheMode.Shared };
                 conn = new SqliteConnection(config.ToString());
             }
 
-            if(conn.State != System.Data.ConnectionState.Open)
+            if (conn.State != System.Data.ConnectionState.Open)
             {
                 conn.Open();
             }
 
-            _options = new DbContextOptionsBuilder<T>()
+            Options = new DbContextOptionsBuilder<T>()
                 .UseSqlite(conn)
                 .Options;
 
-            context = (T?)Activator.CreateInstance(typeof(T), _options);
-            context?.Database.EnsureDeleted();
-            context?.Database.EnsureCreated();
+            Context = (T?)Activator.CreateInstance(typeof(T), Options);
+            Context?.Database.EnsureDeleted();
+            Context?.Database.EnsureCreated();
             return conn;
         }
 
-        public void RegisterKeyAssignment<E>(Action<E, IKeySeeder, T> dependencyActionResolver) where E : class
-            => postDependencyResolvers.TryAdd(typeof(E), dependencyActionResolver);
-
-        public List<E> GenerateEntities<E>(int count, Action<E>? initializeAction = null) where E : class
+        /// <summary>
+        /// Generates a specified quantity of fake entities of type TEntity.
+        /// An optional initialization action allows further customization.
+        /// </summary>
+        public IEnumerable<TEntity> GenerateEntities<TEntity>(int quantity, Action<TEntity> initAction = null) where TEntity : class, new()
         {
-            var list = new List<E>();
-            for(int i = 0; i < count; i++)
+            var entities = new List<TEntity>();
+            for (int i = 0; i < quantity; i++)
             {
-                list.Add(GenerateEntity(initializeAction));
+                var entity = GenerateEntity<TEntity>(initAction);
+                Set<TEntity>().Add(entity);
+                entities.Add(entity);
             }
-            return list;
+            return entities;
         }
 
-        public E GenerateEntity<E>(Action<E>? initializeAction = null) where E : class
+        public TEntity GenerateEntity<TEntity>(Action<TEntity> initAction = null) where TEntity : class, new()
         {
-            var type = typeof(E);
-            if (!postDependencyResolvers.ContainsKey(type))
-                throw new Exception($"Must have registered dependency resolver for {type.Name} prior to saving");
-            var entity = bogus.Generate<E>();
-            bogus.RemoveGeneratedReferences(entity);
-            bogus.ClearKeys(entity);
-            bogus.ApplyInitializingAction(entity, initializeAction);
-            var search = context?.Set<E>()?.Find(entity.GetKeys());
-            if (search == null)
-            {
-                //assumes all keys are untouched
-                if (entity.GetKeys().Any(x => x.ToString() == "-1" || x.ToString() == null))
-                {
-                    //validation that all keys are untouched or are warns user that keys are incorrectly assigned
-                    if (!entity.GetKeys().All(x => x.ToString() == "-1" || x.ToString() == null))
-                        throw new Exception($"Didn't update all keys required to override autogeneration");
-                    do //if entity is found, then it was generated ahead of time - skip and generate next valid entity
-                    {
-                        bogus.ApplyDependencyAction<E,T>(entity, (Action<E, IKeySeeder, T>)postDependencyResolvers[type], context);
-                        search = context?.Set<E>()?.Find(entity.GetKeys());
-                    } while (search != null);
-                }
-                else //all keys must be initialized in order to override autogeneration - assumes user will handle dependencies outside of what is provided
-                {
-                    bogus.ApplyInitializingAction(entity, initializeAction);
-                }
-                search = context?.Set<E>()?.Find(entity.GetKeys());
-                context?.Add(entity);
-            } //all keys match and found existing item
-            else
-            {
-                bogus.ApplyInitializingAction(search, initializeAction);
-            }
-            context?.SaveChanges();
+            var entity = BogusGenerator.GenerateFake<TEntity>();
+            initAction?.Invoke(entity);
+            KeySeeder.ClearKeyProperties(entity);
+            KeySeeder.AssignKeys(entity);
             return entity;
         }
 
+        public int SaveChanges() => Context.SaveChanges();
+
+        /// <summary>
+        /// Resolve some issues with the SQLite connection not closing properly with Files as DB source.
+        /// </summary>
         public void CloseConnection()
         {
             _connection?.Close();
@@ -111,14 +95,21 @@ namespace SqliteDbContext.Context
             GC.WaitForPendingFinalizers();
         }
 
+        /// <summary>
+        /// Additional CloseConnection step to force threads to release lock on file Sqlite sources.
+        /// </summary>
         public void CloseAllConnections()
         {
             SQLiteAsyncConnection.ResetPool();
         }
 
-        public T CreateDbContext()
+        /// <summary>
+        /// Creates a new DbContext with shared connection and options to persist data.
+        /// </summary>
+        /// <returns></returns>
+        public T CopyDbContext()
         {
-            var args = new object[] { _options };
+            var args = new object[] { Options };
             return Activator.CreateInstance(typeof(T), args) as T;
         }
     }

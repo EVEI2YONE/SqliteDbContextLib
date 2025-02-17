@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace SqliteDbContext.Metadata
 {
     /// <summary>
-    /// Caches compiled lambda expressions keyed by "FullTypeName.PropertyName" or composite keys.
+    /// Caches compiled lambda expressions for reuse.
     /// </summary>
     public static class LambdaCache
     {

@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 namespace SqliteDbContext.Strategies
 {
     /// <summary>
-    /// Resolves dependency and key metadata from a DbContext and provides helper methods for dynamic query construction.
+    /// Implements dependency resolution and dynamic lambda generation.
     /// </summary>
     public class DependencyResolver : IDependencyResolver
     {

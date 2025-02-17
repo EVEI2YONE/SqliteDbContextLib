@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using SqliteDbContext.Interfaces;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -29,159 +30,168 @@ namespace SqliteDbContext.Generator
         public List<int> GetUniqueRandomKeys<T>(params string[] keyProperties) where T : class;
     }
 
-    public class KeySeeder : IKeySeeder
+    /// <summary>
+    /// Keeps track of generated IDs/keys per entity type.
+    /// Handles auto-incrementing for numeric keys and retrieval of valid foreign keys.
+    /// </summary>
+    public class KeySeeder
     {
-        private readonly IDictionary<Type, IDictionary<string, List<long>>> Keys = new Dictionary<Type,  IDictionary<string, List<long>>>();
-        private readonly IDictionary<Type, IDictionary<string, long>> InitialKeys = new Dictionary<Type, IDictionary<string, long>>();
-        private readonly IDictionary<Type, IDictionary<string, long>> CurrentKeys = new Dictionary<Type, IDictionary<string, long>>();
-        private readonly Random random = new Random();
-
         private readonly DbContext _context;
         private readonly IDependencyResolver _dependencyResolver;
+        private readonly Random _rng;
+
+        // Stores the last assigned key value per entity type and property.
+        private readonly ConcurrentDictionary<(Type, string), object> _currentKeys = new ConcurrentDictionary<(Type, string), object>();
+
+        // Delegate that can be overridden by developers to provide custom key fetching logic.
+        public Func<Type, string, object> CustomKeyFetcher { get; set; }
+
+        // Flag to indicate whether to prefer existing dependent entities for foreign keys.
+        public bool AllowExistingForeignKeys { get; set; } = true;
 
         public KeySeeder(DbContext context, IDependencyResolver dependencyResolver)
         {
             _context = context;
             _dependencyResolver = dependencyResolver;
-        }
-
-        private IEnumerable<string> GetKeyPropertyNames<T>()
-            => typeof(T).GetProperties().Where(x => x.GetCustomAttribute<KeyAttribute>() != null).Select(x => x.Name);
-
-        public void InitializeKeys<T>(params long[] initialValues)
-        {
-            Type type = typeof(T);
-            if (initialValues == null || initialValues.Length == 0)
-            {
-                InitializeKeys<T>(GetKeyPropertyNames<T>().Select(x => (long)0).ToArray());
-                return;
-            }
-            //else if (initialValues.Length == 0)
-            //    throw new Exception($"{type.Name} expected to key attribute properties with initial values passed");
-
-            var keyPropertyNames = GetKeyPropertyNames<T>();
-            if (!keyPropertyNames.Any())
-                throw new Exception($"{type.Name} must have at least one {nameof(KeyAttribute)} Attribute");
-
-            InitialKeys.TryAdd(type, new Dictionary<string, long>());
-            CurrentKeys.TryAdd(type, new  Dictionary<string, long>());
-
-            for(int i = 0; i < initialValues.Length; i++)
-            {
-                var initValue = initialValues[i];
-                initValue = initValue < 0 ? 0 : initValue;
-                var propertyName = keyPropertyNames.ElementAt(i);
-                InitialKeys[type].TryAdd(propertyName, initialValues[i]);
-                CurrentKeys[type].TryAdd(propertyName, initialValues[i]);
-            }
-        }
-
-        public void ResetAllKeys()
-        {
-            Keys.Clear();
-            CurrentKeys.Clear();
-        }
-
-        public void ResetKeys<T>()
-        {
-            Type type = typeof(T);
-            Keys.Remove(type);
-            CurrentKeys.Remove(type);
-        }
-
-        public void ClearAllKeys()
-        {
-            ResetAllKeys();
-            InitialKeys.Clear();
-        }
-
-        public void ClearKeys<T>()
-        {
-            ResetKeys<T>();
-            InitialKeys.Remove(typeof(T));
-        }
-
-        public IEnumerable<long> IncrementKeys<T>()
-        {
-            UpdateKeys<T>(1);
-            return PeekKeys<T>();
-        }
-
-        public IEnumerable<long> PeekKeys<T>()
-        {
-            if (CurrentKeys.TryGetValue(typeof(T), out var keys))
-                return keys.ToList().Select(x => x.Value);
-            else 
-                return new List<long>().AsEnumerable();
-        }
-
-        public void DecrementKeys<T>()
-        {
-            UpdateKeys<T>(-1);
-        }
-
-        private void UpdateKeys<T>(long change)
-        {
-            Type type = typeof(T);
-
-            var keyPropertyNames = GetKeyPropertyNames<T>();
-            if (!keyPropertyNames.Any())
-                throw new Exception($"{type.Name} must have at least one {nameof(KeyAttribute)} Attribute");
-
-            if (!InitialKeys.ContainsKey(type))
-                InitializeKeys<T>(keyPropertyNames.Select(x => (long)0).ToArray());
-
-            for (int i = 0; i < keyPropertyNames.Count(); i++)
-            {
-                var typeDictionary = CurrentKeys[type];
-                var propertyName = keyPropertyNames.ElementAt(i);
-                if (!typeDictionary.ContainsKey(propertyName))
-                    throw new Exception($"{type.Name}.{propertyName} unexpected property name - check code logic");
-                if (typeDictionary[propertyName] + change <= 0)
-                    continue;
-                typeDictionary[propertyName] = typeDictionary[propertyName] + change;
-            }
-        }
-
-        public IEnumerable<long> GetInitialKeys<T>()
-        {
-            var type = typeof(T);
-            if (!InitialKeys.ContainsKey(type))
-                InitializeKeys<T>();
-            var keyPropertyNames = GetKeyPropertyNames<T>();
-            return keyPropertyNames.Select(x => InitialKeys[type][x]);
-        }
-
-        public IEnumerable<long> GetRandomKeys<T>()
-        {
-            var keys = PeekKeys<T>();
-            if (!keys.Any())
-                throw new Exception($"Generate dependent entities first to track generated PKs that can be pulled for a random FK value {typeof(T).Name}");
-            var initial = GetInitialKeys<T>();
-            var randomKeys = new List<long>();
-            for (int i = 0; i < initial.Count(); i++)
-            {
-                var min = initial.ElementAt(i) <= 0 ? 1 : initial.ElementAt(i);
-                var max = keys.ElementAt(i) + 1;
-                randomKeys.Add(random.NextInt64(min, max));
-            }
-            return randomKeys;
+            _rng = new Random();
         }
 
         /// <summary>
-        /// Retrieves unique random keys using a composite key query.
-        /// For example, for an entity with keys "CustomerID", "ProductID", "StoreID".
+        /// Clears the key properties of an entity (using DependencyResolver metadata) so they can be re-assigned.
         /// </summary>
-        public List<int> GetUniqueRandomKeys<T>(params string[] keyProperties) where T : class
+        public void ClearKeyProperties<T>(T entity) where T : class
         {
-            Expression<Func<T, object[]>> compositeLambda = _dependencyResolver.GetCompositeKeyLambda<T>(keyProperties);
-            var keyValues = _context.Set<T>().Select(compositeLambda).FirstOrDefault();
-            if (keyValues != null)
-                return keyValues.Select(x => Convert.ToInt32(x)).ToList();
-            return new List<int>();
+            var meta = _dependencyResolver.GetEntityMetadata().FirstOrDefault(e => e.EntityType == typeof(T));
+            if (meta == null) return;
+            foreach (var keyProp in meta.PrimaryKeys)
+            {
+                var propInfo = typeof(T).GetProperty(keyProp);
+                if (propInfo != null && propInfo.CanWrite)
+                {
+                    // Set default value.
+                    propInfo.SetValue(entity, GetDefault(propInfo.PropertyType));
+                }
+            }
         }
 
-        private string UniqueKey<T>(object[] ids)
-            => $"{typeof(T).Name}:{string.Join(":", ids)}";
+        /// <summary>
+        /// Assigns keys to an entity by auto-incrementing numeric keys or fetching valid foreign keys.
+        /// </summary>
+        public void AssignKeys<T>(T entity) where T : class
+        {
+            var meta = _dependencyResolver.GetEntityMetadata().FirstOrDefault(e => e.EntityType == typeof(T));
+            if (meta == null) return;
+            foreach (var keyProp in meta.PrimaryKeys)
+            {
+                var propInfo = typeof(T).GetProperty(keyProp);
+                if (propInfo != null && propInfo.CanWrite)
+                {
+                    object newKey = null;
+                    // Allow custom key fetcher override.
+                    if (CustomKeyFetcher != null)
+                    {
+                        newKey = CustomKeyFetcher(typeof(T), keyProp);
+                    }
+                    else
+                    {
+                        newKey = AutoIncrementKey(typeof(T), keyProp, propInfo.PropertyType);
+                    }
+                    propInfo.SetValue(entity, newKey);
+                }
+            }
+            // For foreign keys, if allowed, assign existing valid keys.
+            foreach (var foreign in meta.ForeignKeys)
+            {
+                foreach (var fkProp in foreign.ForeignKeyProperties)
+                {
+                    var propInfo = typeof(T).GetProperty(fkProp);
+                    if (propInfo != null && propInfo.CanWrite)
+                    {
+                        // Attempt to fetch a random valid key from the referenced entity.
+                        var foreignType = _context.Model.FindEntityType(typeof(T)).GetForeignKeys()
+                            .FirstOrDefault(fk => fk.Properties.Any(p => p.Name == fkProp))?.PrincipalEntityType.ClrType;
+                        if (foreignType != null && AllowExistingForeignKeys)
+                        {
+                            var set = GetQueryableForType(_context, foreignType);
+                            // Get a random entity's key value.
+                            var randomKey = set.Cast<object>().FirstOrDefault();
+                            if (randomKey != null)
+                            {
+                                // Assume the foreign key property matches the primary key of the referenced entity.
+                                propInfo.SetValue(entity, GetKeyValue(randomKey));
+                                continue;
+                            }
+                        }
+                        // If no valid foreign key exists, assign a new key.
+                        propInfo.SetValue(entity, AutoIncrementKey(typeof(T), fkProp, propInfo.PropertyType));
+                    }
+                }
+            }
+        }
+
+        private IQueryable GetQueryableForType(DbContext ctx, Type entityType)
+        {
+            // Get the generic "Set<TEntity>()" method from DbContext and invoke it with the foreignType.
+            var method = typeof(DbContext).GetMethod("Set", Type.EmptyTypes);
+            var generic = method.MakeGenericMethod(entityType);
+            return (IQueryable)generic.Invoke(ctx, null);
+        }
+
+        /// <summary>
+        /// Auto-increments numeric keys or generates new values for other types.
+        /// </summary>
+        private object AutoIncrementKey(Type entityType, string propertyName, Type keyType)
+        {
+            var key = (entityType, propertyName);
+            object currentVal = _currentKeys.ContainsKey(key) ? _currentKeys[key] : GetDefault(keyType);
+            object newVal;
+            if (keyType == typeof(int))
+            {
+                int curr = currentVal is int i ? i : 0;
+                newVal = curr + 1;
+            }
+            else if (keyType == typeof(long))
+            {
+                long curr = currentVal is long l ? l : 0;
+                newVal = curr + 1L;
+            }
+            else if (keyType == typeof(Guid))
+            {
+                newVal = Guid.NewGuid();
+            }
+            else if (keyType == typeof(string))
+            {
+                newVal = Guid.NewGuid().ToString();
+            }
+            else if (keyType == typeof(DateTime))
+            {
+                newVal = DateTime.UtcNow;
+            }
+            else
+            {
+                // Fallback: attempt to increment if possible, otherwise return default.
+                newVal = GetDefault(keyType);
+            }
+            _currentKeys[key] = newVal;
+            return newVal;
+        }
+
+        /// <summary>
+        /// Retrieves the key value from an entity using reflection.
+        /// </summary>
+        private object GetKeyValue(object entity)
+        {
+            // Assume the entity has a single primary key.
+            var key = _context.Model.FindEntityType(entity.GetType())?.FindPrimaryKey();
+            if (key != null && key.Properties.Any())
+            {
+                var propName = key.Properties.First().Name;
+                var prop = entity.GetType().GetProperty(propName);
+                return prop?.GetValue(entity);
+            }
+            return null;
+        }
+
+        private object GetDefault(Type type) => type.IsValueType ? Activator.CreateInstance(type) : null;
     }
 }

@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 
 namespace SqliteDbContext.Metadata
 {
+    /// <summary>
+    /// Helper methods to extract metadata from a DbContext and build lambda selectors.
+    /// </summary>
     public static class DbContextMetadataHelper
     {
         public static List<EntityMetadata> GetEntityMetadata(DbContext context) =>
@@ -26,8 +29,7 @@ namespace SqliteDbContext.Metadata
                 }).ToList();
 
         /// <summary>
-        /// Builds a lambda to select a single property.
-        /// e.g. (TEntity e) => (object)e.PropertyName.
+        /// Builds a lambda to select a single property (e.g. (T e) => (object)e.PropertyName).
         /// </summary>
         public static Expression<Func<TEntity, object>> BuildPropertySelector<TEntity>(string propertyName)
         {
@@ -39,7 +41,7 @@ namespace SqliteDbContext.Metadata
 
         /// <summary>
         /// Builds a lambda to select a composite key as an object array.
-        /// e.g. (TEntity e) => new object[] { (object)e.Key1, (object)e.Key2 }.
+        /// e.g. (T e) => new object[] { (object)e.Key1, (object)e.Key2 }.
         /// </summary>
         public static Expression<Func<TEntity, object[]>> BuildCompositeKeySelector<TEntity>(IEnumerable<string> propertyNames)
         {

@@ -13,28 +13,12 @@ using System.Threading.Tasks;
 
 namespace SqliteDbContext.Generator
 {
+    /// <summary>
+    /// Uses Bogus to generate fake entities, then clears key values and defers to KeySeeder for key assignment.
+    /// </summary>
     public class BogusGenerator
     {
-        private DbContext dbcontext;
         private EntityGenerator autopopulate = new EntityGenerator();
-        private IKeySeeder keySeeder;
-        public BogusGenerator(DbContext? context, IDependencyResolver dependencyResolver)
-        {
-            if (context == null)
-                throw new ArgumentException("Must have value supplied", nameof(context), null);
-            autopopulate.DefaultValues = typeSwitch;
-            dbcontext = context;
-            keySeeder = new KeySeeder(context, dependencyResolver);
-        }
-
-        private readonly IDependencyResolver _dependencyResolver;
-
-        public BogusGenerator(IDependencyResolver dependencyResolver)
-        {
-            _dependencyResolver = dependencyResolver;
-        }
-
-
         private static Faker f = new Faker();
         public static Dictionary<Type, Delegate> typeSwitch = new Dictionary<Type, Delegate> {
             { typeof(string), () => f.Random.Words(5) },
@@ -51,73 +35,27 @@ namespace SqliteDbContext.Generator
             { typeof(Guid), () => f.Random.Guid() },
         };
 
-        private IEnumerable<PropertyInfo> GetKeyProperties(object? obj)
-            => obj == null ? new List<PropertyInfo>() : obj.GetType().GetProperties().Where(x => x.GetCustomAttribute<KeyAttribute>() != null);
+        private readonly IDependencyResolver _dependencyResolver;
+        private readonly KeySeeder _keySeeder;
 
-        public E Generate<E>() where E : class
+        public BogusGenerator(IDependencyResolver dependencyResolver, KeySeeder keySeeder)
         {
-            var fakeList = new Faker<E>() //customly define new item to be generated
+            _dependencyResolver = dependencyResolver;
+            _keySeeder = keySeeder;
+        }
+
+        public T GenerateFake<T>() where T : class, new()
+        {
+            var faker = new Faker<T>()
                 .CustomInstantiator(f =>
                 {
-                var item = (E)autopopulate.CreateFake(typeof(E));
-                return item;
+                    var item = (T) autopopulate.CreateFake(typeof(T));
+                    return item;
+
                 });
-            return fakeList.Generate();
-        }
-
-        public void RemoveGeneratedReferences(object? item)
-        {
-            if (item == null)
-                return;
-            foreach(var property in item.GetType().GetProperties())
-            {
-                var propertyType = property.PropertyType;
-                var type = propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(Nullable<>) ? propertyType.UnderlyingSystemType : propertyType;
-                if (type.IsPrimitive || type == typeof(string) || type == typeof(DateTime))
-                    continue;
-                if (type.IsGenericType)
-                {
-                    var genericType = type.GetGenericTypeDefinition();
-                    if (genericType == typeof(ICollection<>) || genericType == typeof(IDictionary<,>) || genericType == typeof(HashSet<>) || genericType == typeof(IList<>))
-                        continue;
-                }
-                property.SetValue(item, null);
-            }
-        }
-
-        public void ClearKeys(object? item)
-        {
-            if (item == null)
-                return;
-            var type = item.GetType();
-            var properties = type.GetProperties();
-            var keyProperties = GetKeyProperties(item);
-
-            //clear keys
-            if (keyProperties.Any())
-                keyProperties.ToList().ForEach(x =>
-                {
-                    if (x.PropertyType == typeof(string))
-                    {
-                        x.SetValue(item, null);
-                    }
-                    else
-                    {
-                        x.SetValue(item, Convert.ChangeType(-1, x.PropertyType));
-                    }
-                });
-        }
-
-        public void ApplyInitializingAction<E>(E entity, Action<E>? initializeAction) where E : class
-        {
-            if (initializeAction == null)
-                return;
-            initializeAction(entity);
-        }
-
-        public void ApplyDependencyAction<E, T>(E entity, Action<E, IKeySeeder, T> dependencyAction, T ctx) where E : class where T : DbContext
-        {
-            dependencyAction(entity, keySeeder, ctx);
+            // Generate fake data.
+            var entity = faker.Generate();
+            return entity;
         }
     }
 }

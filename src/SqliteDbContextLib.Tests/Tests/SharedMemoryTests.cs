@@ -68,7 +68,7 @@ namespace SqliteDbContextLib.Tests.Tests
             var region = dbContext.GenerateEntity<Region>();
             var store = dbContext.GenerateEntity<Store>();
 
-            using (var context = dbContext.CreateDbContext())
+            using (var context = dbContext.CopyDbContext())
             {
                 var region2 = context.Regions.Find(region.RegionId);
                 Assert.IsNotNull(region2);

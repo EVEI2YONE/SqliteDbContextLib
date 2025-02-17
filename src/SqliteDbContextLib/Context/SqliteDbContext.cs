@@ -1,6 +1,7 @@
 ﻿using AutoPopulate;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using SQLite;
 using SqliteDbContext.Extensions;
 using SqliteDbContext.Generator;
@@ -82,17 +83,35 @@ namespace SqliteDbContext.Context
 
         public TEntity GenerateEntity<TEntity>(Action<TEntity> initAction = null) where TEntity : class, new()
         {
+            // Generate a fake entity and remove all navigation properties (initial cleanup).
             var entity = BogusGenerator.GenerateFake<TEntity>();
             entity = BogusGenerator.RemoveNavigationProperties(entity);
             initAction?.Invoke(entity);
-            // Call the new KeySeeder methods with a recursionDepth parameter.
-            KeySeeder.ClearNavigationReferences(entity);
+
+            // Clear key properties and assign keys (with recursion depth 0).
             KeySeeder.ClearKeyProperties(entity, 0);
             KeySeeder.AssignKeys(entity, 0);
+
+            // Attach the entity to the context.
             Set<TEntity>().Add(entity);
+
+            // After attaching, clear only those navigation properties that reference new (unpersisted) dependent instances.
+            entity = BogusGenerator.ClearNewNavigationProperties(entity, Context);
+
             SaveChanges();
             return entity;
         }
+
+        private string SerializeRecursiveEntity<TEntity>(TEntity entity) where TEntity : class
+        {
+            var json = JsonConvert.SerializeObject(entity, new JsonSerializerSettings
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                PreserveReferencesHandling = PreserveReferencesHandling.None
+            });
+            return json;
+        }
+
 
         public int SaveChanges() => Context.SaveChanges();
 

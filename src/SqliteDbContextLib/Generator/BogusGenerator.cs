@@ -107,5 +107,58 @@ namespace SqliteDbContext.Generator
             }
             return entity;
         }
+
+        public T ClearNewNavigationProperties<T>(T entity, DbContext context) where T : class
+        {
+            // Iterate over public instance properties.
+            var type = typeof(T);
+            foreach (var prop in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            {
+                if (!prop.CanRead || !prop.CanWrite)
+                    continue;
+                if (prop.PropertyType == typeof(string))
+                    continue;
+                // Skip collections.
+                if (typeof(IEnumerable).IsAssignableFrom(prop.PropertyType) && prop.PropertyType != typeof(string))
+                    continue;
+
+                // Only consider virtual (overridable) properties.
+                var getter = prop.GetGetMethod();
+                if (getter == null || !getter.IsVirtual || getter.IsFinal)
+                    continue;
+
+                var navigationValue = prop.GetValue(entity);
+                if (navigationValue == null)
+                    continue;
+
+                // Check if the navigation value is being tracked.
+                var entry = context.Entry(navigationValue);
+                // If the referenced entity is new (state Added) then clear the navigation property.
+                if (entry.State == EntityState.Added)
+                {
+                    prop.SetValue(entity, null);
+                }
+                else
+                {
+                    // Alternatively, if the referenced entity's key is still at its default value, clear it.
+                    var foreignKey = context.Model.FindEntityType(navigationValue.GetType()).FindPrimaryKey();
+                    if (foreignKey != null)
+                    {
+                        var keyProp = foreignKey.Properties.First().PropertyInfo;
+                        var keyValue = keyProp.GetValue(navigationValue);
+                        if (Equals(keyValue, GetDefault(keyProp.PropertyType)))
+                        {
+                            prop.SetValue(entity, null);
+                        }
+                    }
+                }
+            }
+            return entity;
+        }
+
+        /// <summary>
+        /// Helper method to return the default value for a given type.
+        /// </summary>
+        private static object GetDefault(Type type) => type.IsValueType ? Activator.CreateInstance(type) : null;
     }
 }

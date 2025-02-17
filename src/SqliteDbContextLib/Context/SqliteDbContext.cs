@@ -68,7 +68,6 @@ namespace SqliteDbContext.Context
             for (int i = 0; i < quantity; i++)
             {
                 var entity = GenerateEntity<TEntity>(initAction);
-                Set<TEntity>().Add(entity);
                 entities.Add(entity);
             }
             return entities;
@@ -77,9 +76,12 @@ namespace SqliteDbContext.Context
         public TEntity GenerateEntity<TEntity>(Action<TEntity> initAction = null) where TEntity : class, new()
         {
             var entity = BogusGenerator.GenerateFake<TEntity>();
+            entity = BogusGenerator.RemoveNavigationProperties(entity);
             initAction?.Invoke(entity);
             KeySeeder.ClearKeyProperties(entity);
             KeySeeder.AssignKeys(entity);
+            Set<TEntity>().Add(entity);
+            SaveChanges();
             return entity;
         }
 

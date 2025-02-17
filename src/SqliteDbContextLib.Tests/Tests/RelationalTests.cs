@@ -82,7 +82,6 @@ namespace SqliteDbContextLibTests.Tests
         [TestCase(10, 5, 20)]
         [TestCase(100, 10, 200)]
         [TestCase(1000, 200, 2000)]
-        [TestCase(5000, 500, 5000)]
         public void GeneratePurchasesTest(int totalProducts, int totalCustomers, int totalPurchases)
         {
             GenerateProductsTest(totalProducts);

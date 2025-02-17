@@ -3,9 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Newtonsoft.Json;
 using NUnit.Framework;
+using SmoothBrainDevelopers.DataLayer.Test.Context;
+using SmoothBrainDevelopers.DataLayer.Test.Domain;
 using SqliteDbContext.Context;
-using SqliteDbContextLibTests.Context;
-using SqliteDbContextLibTests.Domain;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -63,12 +63,11 @@ namespace SqliteDbContextLib.Tests.Tests
         public void SqliteDbContext_SharedMemoryTest()
         {
             var dbContext = new SqliteDbContext<TestDbContext>();
-            base.RegisterDbContextDependencies(dbContext);
 
             var region = dbContext.GenerateEntity<Region>();
             var store = dbContext.GenerateEntity<Store>();
 
-            using (var context = dbContext.CreateDbContext())
+            using (var context = dbContext.CopyDbContext())
             {
                 var region2 = context.Regions.Find(region.RegionId);
                 Assert.IsNotNull(region2);

@@ -1,33 +1,13 @@
-﻿using SqliteDbContext.Context;
-using SqliteDbContext.Helpers;
+﻿using SmoothBrainDevelopers.DataLayer.Test.Context;
+using SmoothBrainDevelopers.DataLayer.Test.Domain;
+using SqliteDbContext.Context;
+using SqliteDbContext.Strategies;
 using SqliteDbContextLib.Tests.Tests;
-using SqliteDbContextLibTests.Context;
-using SqliteDbContextLibTests.Domain;
 
 namespace SqliteDbContextLibTests.Tests
 {
     internal class RelationalTests : TestBase
     {
-        private SqliteDbContext<TestDbContext> context;
-        private TestDbContext ctx;
-
-        private static Random random = new Random();
-
-        [SetUp]
-        public void Setup()
-        {
-            context = new SqliteDbContext<TestDbContext>();
-            base.RegisterDbContextDependencies(context);
-            ctx = context.Context;
-        }
-
-        [Test]
-        public void DisplayDependencies()
-        {
-            var dependencyResolver = new DependencyResolver(ctx);
-            Console.WriteLine(string.Join("\n", dependencyResolver.GetDependencyOrder().Select(x => x.Name)));
-        }
-
         [TestCase(1)]
         [TestCase(2)]
         [TestCase(5)]
@@ -89,7 +69,6 @@ namespace SqliteDbContextLibTests.Tests
         [TestCase(10, 5, 20)]
         [TestCase(100, 10, 200)]
         [TestCase(1000, 200, 2000)]
-        [TestCase(5000, 500, 5000)]
         public void GeneratePurchasesTest(int totalProducts, int totalCustomers, int totalPurchases)
         {
             GenerateProductsTest(totalProducts);

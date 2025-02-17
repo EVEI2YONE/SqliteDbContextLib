@@ -25,13 +25,30 @@ namespace SqliteDbContextLib.Tests.Tests
         [Test]
         public void DbContextDebuggerTest()
         {
-            var dbContextDebugger = new DbContextDebugger<TestDbContext>(context);
+            var customers = ctx.Customers.ToList();
+            var regions = ctx.Regions.ToList();
+            var stores = ctx.Stores.ToList();
+            var products = ctx.Products.ToList();
+            var purchases = ctx.Purchases.ToList();
+            try
+            {
+                var dbContextDebugger = new DbContextDebugger<TestDbContext>(context);
 
-            var entities = context.GenerateEntities<Purchase>(1);
-            //var entities = context.GenerateEntities<Purchase>(5);
-            var keySeeder = context.KeySeeder;
+                var entities = context.GenerateEntities<Purchase>(1);
+                //var entities = context.GenerateEntities<Purchase>(5);
+                var keySeeder = context.KeySeeder;
 
-            dbContextDebugger.DumpKeySeederStatus(keySeeder);
+                dbContextDebugger.DumpKeySeederStatus(keySeeder);
+            }
+            catch(Exception ex)
+            {
+                customers = ctx.Customers.ToList();
+                regions = ctx.Regions.ToList();
+                stores = ctx.Stores.ToList();
+                products = ctx.Products.ToList();
+                purchases = ctx.Purchases.ToList();
+                throw;
+            }
         }
     }
 }

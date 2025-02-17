@@ -31,7 +31,9 @@ namespace SqliteDbContext.Context
             _connection = CreateConnection(DbInstanceName, conn);
             DependencyResolver = new DependencyResolver(Context);
             EntityGenerator = new FakeEntityGenerator();
-            EntityGenerator.RecursiveLimit = 1; //limit the number of recursive generations. If set higher than 1, then could generate an invalid set of keys
+            EntityGenerator.RecursiveLimit = 0; //limit the number of recursive generations. If set higher than 1, then could generate an invalid set of keys
+            EntityGenerator.CollectionLimit = 0;
+            EntityGenerator.RandomizationBehavior = AutoPopulate.EntityGenerator.RandomizationType.Fixed;
             KeySeeder = new KeySeeder(Context, DependencyResolver, EntityGenerator);
             KeySeeder.ExistingReferenceChance = 0.7; //0.7 chance of using an existing key vs generating a new instance
             BogusGenerator = new BogusGenerator(DependencyResolver, KeySeeder, EntityGenerator);
@@ -84,6 +86,7 @@ namespace SqliteDbContext.Context
             entity = BogusGenerator.RemoveNavigationProperties(entity);
             initAction?.Invoke(entity);
             // Call the new KeySeeder methods with a recursionDepth parameter.
+            KeySeeder.ClearNavigationReferences(entity);
             KeySeeder.ClearKeyProperties(entity, 0);
             KeySeeder.AssignKeys(entity, 0);
             Set<TEntity>().Add(entity);

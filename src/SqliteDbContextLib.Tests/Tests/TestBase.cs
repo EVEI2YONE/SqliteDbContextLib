@@ -21,7 +21,7 @@ namespace SqliteDbContextLib.Tests.Tests
         public void Setup()
         {
             context = new SqliteDbContext<TestDbContext>();
-            context.KeySeeder.ExistingReferenceChance = 1; //if a reference exists, don't generate new instances
+            context.KeySeeder.ExistingReferenceChance = 1; //if a reference exists, don't generate new instances for testing verifcation
             RegisterDbContextDependencies(context);
             ctx = context.Context;
         }

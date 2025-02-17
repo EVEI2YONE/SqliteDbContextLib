@@ -19,19 +19,21 @@ namespace SqliteDbContext.Context
     public class SqliteDbContext<T> where T : DbContext
     {
         public T Context { get; private set; }
-        public IDependencyResolver DependencyResolver { get; }
-        public IKeySeeder KeySeeder { get; }
-        public BogusGenerator BogusGenerator { get; }
-        public IEntityGenerator EntityGenerator { get; }
-        private SqliteConnection _connection;
+        public IDependencyResolver DependencyResolver { get; private set; }
+        public IEntityGenerator EntityGenerator { get; private set; }
+        public IKeySeeder KeySeeder { get; private set; }
+        public BogusGenerator BogusGenerator { get; private set; }
         public DbContextOptions<T> Options { get; private set; }
+        private SqliteConnection _connection;
 
         public SqliteDbContext(string? DbInstanceName = null, SqliteConnection? conn = null)
         {
             _connection = CreateConnection(DbInstanceName, conn);
             DependencyResolver = new DependencyResolver(Context);
             EntityGenerator = new FakeEntityGenerator();
+            EntityGenerator.RecursiveLimit = 1; //limit the number of recursive generations. If set higher than 1, then could generate an invalid set of keys
             KeySeeder = new KeySeeder(Context, DependencyResolver, EntityGenerator);
+            KeySeeder.ExistingReferenceChance = 0.7; //0.7 chance of using an existing key vs generating a new instance
             BogusGenerator = new BogusGenerator(DependencyResolver, KeySeeder, EntityGenerator);
         }
 
